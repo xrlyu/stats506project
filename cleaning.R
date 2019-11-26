@@ -6,6 +6,7 @@ diet1 <- read.xport("./Original Data/DR1TOT_I.XPT.txt")
 diet2 <- read.xport("./Original Data/DR2TOT_I.XPT.txt")
 bp <- read.xport("./Original Data/BPX_I.XPT.txt")
 ldl <- read.xport("./Original Data/TRIGLY_I.XPT.txt")
+bm <- read.xport("./Original Data/BMX_I.XPT.txt")
 
 demo <- demo %>% select(SEQN, RIAGENDR, RIDAGEYR, RIDRETH3) %>% 
   rename(seqn = SEQN, gender = RIAGENDR, age = RIDAGEYR, race = RIDRETH3) %>% 
@@ -43,15 +44,22 @@ ldl <- ldl %>% select(SEQN, LBDLDL, LBXTR) %>%
 
 # saveRDS(ldl, "./Cleaning/ldl.rds")
 
+bm <- bm %>% select(SEQN, BMXWT, BMXHT, BMXBMI) %>% 
+  rename(seqn = SEQN, weight = BMXWT, height = BMXHT, bmi = BMXBMI)
+
+# saveRDS(bm, "./Cleaning/bm.rds")
+
 ## merge datasets
 day1 <- inner_join(demo, bp, by = "seqn") %>% 
   inner_join(., ldl, by = "seqn") %>% 
-  inner_join(., diet1, by = "seqn") 
+  inner_join(., diet1, by = "seqn") %>% 
+  inner_join(., bm, by = "seqn")
   
 
 day2 <- inner_join(demo, bp, by = "seqn") %>% 
   inner_join(., ldl, by = "seqn") %>% 
-  inner_join(., diet2, by = "seqn")
+  inner_join(., diet2, by = "seqn") %>% 
+  inner_join(., bm, by = "seqn")
 
 final <- rbind(day1, day2) %>% 
   arrange(seqn) %>% 
