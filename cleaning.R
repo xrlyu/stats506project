@@ -54,8 +54,8 @@ final <- inner_join(demo, bp, by = "seqn") %>%
   inner_join(., diet1, by = "seqn") %>% 
   inner_join(., diet2, by = "seqn") %>% 
   inner_join(., bm, by = "seqn") %>% 
-  mutate(fat = (fat1 + fat2)/2,
-         chol = (chol1 + chol2)/2) %>%
+  mutate(fat = rowMeans(select(., starts_with("fat")), na.rm = TRUE),
+         chol = rowMeans(select(., starts_with("chol")), na.rm = TRUE)) %>%
   select(-fat1, -fat2, -chol1, -chol2) %>% 
   arrange(seqn) %>% 
   na.omit()
