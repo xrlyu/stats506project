@@ -12,21 +12,19 @@ save "./Xiru Lyu/Data/demo.dta", replace
 * import diet data
 import sasxport "./Original Data/DR1TOT_I.XPT.txt", clear
 
-rename dr1ttfat fat
-rename dr1tchol chol
-generate day = 1
+rename dr1ttfat fat1
+rename dr1tchol chol1
 
-keep seqn fat chol day
+keep seqn fat1 chol1
 
 save "./Xiru Lyu/Data/diet1.dta", replace
 
 import sasxport "./Original Data/DR2TOT_I.XPT.txt", clear
 
-rename dr2ttfat fat
-rename dr2tchol chol
-generate day = 2
+rename dr2ttfat fat2
+rename dr2tchol chol2
 
-keep seqn fat chol day
+keep seqn fat2 chol2
 
 save "./Xiru Lyu/Data/diet2.dta", replace
 
@@ -70,8 +68,6 @@ keep seqn weight height bmi
 
 save "./Xiru Lyu/Data/bm.dta", replace
 
-preserve
-
 // merge datasets
 merge 1:1 seqn using "./Xiru Lyu/Data/demo.dta"
 
@@ -79,27 +75,6 @@ keep if _merge == 3
 drop _merge
 
 merge 1:1 seqn using "./Xiru Lyu/Data/diet1.dta"
-
-keep if _merge == 3
-drop _merge
-
-merge 1:1 seqn using "./Xiru Lyu/Data/bp.dta"
-
-keep if _merge == 3
-drop _merge
-
-merge 1:1 seqn using "./Xiru Lyu/Data/ldl.dta"
-
-keep if _merge == 3
-drop _merge
-
-save "./Xiru Lyu/Data/day1.dta", replace
-
-
-
-use "./Xiru Lyu/Data/bm.dta", clear
-
-merge 1:1 seqn using "./Xiru Lyu/Data/demo.dta"
 
 keep if _merge == 3
 drop _merge
@@ -119,9 +94,12 @@ merge 1:1 seqn using "./Xiru Lyu/Data/ldl.dta"
 keep if _merge == 3
 drop _merge
 
-append using "./Xiru Lyu/Data/day1.dta"
+generate fat = (fat1 + fat2)/2
+generate chol = (chol1 + chol2)/2
 
-foreach var of varlist age bmi chol day di fat gender height ldl race seqn ///
+drop fat1 fat2 chol1 chol2
+
+foreach var of varlist age bmi chol di fat gender height ldl race seqn ///
 sy trig weight{
 drop if missing(`var')
 }
