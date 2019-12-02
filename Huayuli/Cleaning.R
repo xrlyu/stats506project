@@ -9,12 +9,12 @@ library(tidyverse)
 #setwd('/Users/lihuayu/Documents/UMich-New Start/506/Project')
 
 ## Read the datasets
-demo=data.table(read.xport("DEMO_I.XPT"))
-tot1=data.table(read.xport("DR1TOT_I.XPT"))
-tot2=data.table(read.xport("DR2TOT_I.XPT"))
-b_pres=data.table(read.xport("BPX_I.XPT"))
-ldl=data.table(read.xport("TRIGLY_I.XPT"))
-measure=data.table(read.xport("BMX_I.XPT"))
+demo=data.table(read.xport("DEMO_I.XPT.txt"))
+tot1=data.table(read.xport("DR1TOT_I.XPT.txt"))
+tot2=data.table(read.xport("DR2TOT_I.XPT.txt"))
+b_pres=data.table(read.xport("BPX_I.XPT.txt"))
+ldl=data.table(read.xport("TRIGLY_I.XPT.txt"))
+measure=data.table(read.xport("BMX_I.XPT.txt"))
 
 ## For each dataset, choose the proper variables and make 
 ## some transformation.
