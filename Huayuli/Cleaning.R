@@ -48,8 +48,7 @@ B_pres=dcast(B_pres,...~type,value.var=c('pres'))[
 
 # For ldl dataset, we choose seqn, LDL-cholesterol and Triglyceride
 # for mg/dL.
-LDL=ldl[,.(seqn=SEQN,ldl=LBDLDL,triglycerides=LBDTR,
-           fast_sub=WTSAF2YR)]
+LDL=ldl[,.(seqn=SEQN,ldl=LBDLDL,triglycerides=LBXTR)]
 
 # For body measure dataset, we choose weight height and bmi as our 
 # variables.
