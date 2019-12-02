@@ -16,12 +16,10 @@ demo <- demo %>% select(SEQN, RIAGENDR, RIDAGEYR, RIDRETH3) %>%
 # saveRDS(demo, "./Cleaning/demo.rds")
 
 diet1 <- diet1 %>% select(SEQN, DR1TTFAT, DR1TCHOL) %>% 
-  mutate(day = 1) %>% 
-  rename(fat = DR1TTFAT, chol = DR1TCHOL, seqn = SEQN)
+  rename(fat1 = DR1TTFAT, chol1 = DR1TCHOL, seqn = SEQN)
 
 diet2 <- diet2 %>% select(SEQN, DR2TTFAT, DR2TCHOL) %>% 
-  mutate(day = 2) %>% 
-  rename(fat = DR2TTFAT, chol = DR2TCHOL, seqn = SEQN)
+  rename(fat2 = DR2TTFAT, chol2 = DR2TCHOL, seqn = SEQN)
 
 # saveRDS(diet1, "./Cleaning/diet1.rds")
 # saveRDS(diet1, "./Cleaning/diet2.rds")
@@ -50,18 +48,15 @@ bm <- bm %>% select(SEQN, BMXWT, BMXHT, BMXBMI) %>%
 # saveRDS(bm, "./Cleaning/bm.rds")
 
 ## merge datasets
-day1 <- inner_join(demo, bp, by = "seqn") %>% 
+
+final <- inner_join(demo, bp, by = "seqn") %>% 
   inner_join(., ldl, by = "seqn") %>% 
   inner_join(., diet1, by = "seqn") %>% 
-  inner_join(., bm, by = "seqn")
-  
-
-day2 <- inner_join(demo, bp, by = "seqn") %>% 
-  inner_join(., ldl, by = "seqn") %>% 
   inner_join(., diet2, by = "seqn") %>% 
-  inner_join(., bm, by = "seqn")
-
-final <- rbind(day1, day2) %>% 
+  inner_join(., bm, by = "seqn") %>% 
+  mutate(fat = (fat1 + fat2)/2,
+         chol = (chol1 + chol2)/2) %>%
+  select(-fat1, -fat2, -chol1, -chol2) %>% 
   arrange(seqn) %>% 
   na.omit()
 
