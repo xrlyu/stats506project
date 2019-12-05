@@ -94,8 +94,8 @@ merge 1:1 seqn using "./Xiru Lyu/Data/ldl.dta"
 keep if _merge == 3
 drop _merge
 
-generate fat = (fat1 + fat2)/2
-generate chol = (chol1 + chol2)/2
+egen fat = rowmean(fat1 fat2)
+egen chol = rowmean(chol1 chol2)
 
 drop fat1 fat2 chol1 chol2
 
