@@ -20,15 +20,29 @@ measure=data.table(read.xport("BMX_I.XPT.txt"))
 ## some transformation.
 
 # For demo dataset, we choose seqn, gender, age and race variables
-Demo=demo[,.(seqn=SEQN,gender=RIAGENDR,
-             age=RIDAGEYR,race=RIDRETH3)]
+Demo=demo[,.(seqn=SEQN,gender=as.factor(RIAGENDR),
+             age=RIDAGEYR,race=as.factor(RIDRETH3))]
 
 # For dietary data, we choose seqn, intake fat, intake cholesterol
-# for each day.
+# for each day. 
 TOT1=tot1[,.(seqn=SEQN,intake_fat1=DR1TTFAT,
              intake_chol1=DR1TCHOL)]
 TOT2=tot2[,.(seqn=SEQN,intake_fat2=DR2TTFAT,
              intake_chol2=DR2TCHOL)]
+
+## Next we will use the average intake of the two days into
+## our model. The average step is as following:
+intake_type=c('intake_fat1','intake_fat2','intake_chol1','intake_chol2')
+TOT=TOT1%>%merge(.,TOT2,by='seqn',all=FALSE)
+TOT=melt(TOT,measure=intake_type)[
+    ,.(seqn,type=factor(variable,intake_type,c(rep('intake_fat',times=2),
+                                               rep('intake_chol',times=2))),
+       variable,value)  
+    ][
+      ,.(intake=mean(value,na.rm=TRUE)),by=.(seqn,type)
+    ]
+  
+TOT=dcast(TOT,...~type,value.var=c('intake'))  
 
 # For blood pressure, we choose seqn, systolic pressures and diastolic 
 # pressures. We then use the average pressure as the final pressure.
@@ -54,13 +68,6 @@ LDL=ldl[,.(seqn=SEQN,ldl=LBDLDL,triglycerides=LBXTR)]
 # variables.
 Measure=measure[,.(seqn=SEQN,weight=BMXWT,height=BMXHT,bmi=BMXBMI)]
 
-
-## Next we will use the average intake of the two days into
-## our model. The average step is as following:
-
-TOT=TOT1%>%merge(.,TOT2,by='seqn',all=FALSE)%>%
-  .[,.(seqn,intake_fat=(intake_fat1+intake_fat2)/2,
-       intake_chol=(intake_chol1+intake_chol2)/2)]
 
 ## Now merge the datasets into one whole, with the seqn as
 ## the merging label. By the way, some seqn labels 
