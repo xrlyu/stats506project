@@ -13309,6 +13309,119 @@ div#notebook {
 </div>
 
 </div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[21]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">model2</span><span class="o">=</span><span class="n">sm</span><span class="o">.</span><span class="n">MixedLM</span><span class="o">.</span><span class="n">from_formula</span><span class="p">(</span><span class="s2">&quot;LBDLDL~LBXTR+LBXTR2+BPXDI+AGE+AGE2+BPXSY+HEIGHT+CHOL&quot;</span><span class="p">,</span>
+                              <span class="n">Data</span><span class="p">,</span><span class="n">groups</span><span class="o">=</span><span class="n">Data</span><span class="p">[</span><span class="s1">&#39;RACE&#39;</span><span class="p">])</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[23]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">res</span><span class="o">=</span><span class="n">model2</span><span class="o">.</span><span class="n">fit</span><span class="p">()</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[26]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">res</span><span class="o">.</span><span class="n">summary</span><span class="p">()</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+    <div class="prompt output_prompt">Out[26]:</div>
+
+
+
+<div class="output_html rendered_html output_subarea output_execute_result">
+<table class="simpletable">
+<tr>
+       <td>Model:</td>       <td>MixedLM</td> <td>Dependent Variable:</td>   <td>LBDLDL</td>   
+</tr>
+<tr>
+  <td>No. Observations:</td>  <td>2503</td>         <td>Method:</td>          <td>REML</td>    
+</tr>
+<tr>
+     <td>No. Groups:</td>       <td>6</td>          <td>Scale:</td>         <td>1017.2526</td> 
+</tr>
+<tr>
+  <td>Min. group size:</td>    <td>93</td>        <td>Likelihood:</td>     <td>-12245.0814</td>
+</tr>
+<tr>
+  <td>Max. group size:</td>    <td>852</td>       <td>Converged:</td>          <td>Yes</td>    
+</tr>
+<tr>
+  <td>Mean group size:</td>   <td>417.2</td>           <td></td>                <td></td>      
+</tr>
+</table>
+<table class="simpletable">
+<tr>
+      <td></td>       <th>Coef.</th> <th>Std.Err.</th>    <th>z</th>    <th>P>|z|</th> <th>[0.025</th> <th>0.975]</th>
+</tr>
+<tr>
+  <th>Intercept</th> <td>38.613</td>  <td>12.111</td>   <td>3.188</td>  <td>0.001</td> <td>14.876</td> <td>62.351</td>
+</tr>
+<tr>
+  <th>LBXTR</th>      <td>0.436</td>   <td>0.034</td>  <td>12.917</td>  <td>0.000</td>  <td>0.370</td>  <td>0.502</td>
+</tr>
+<tr>
+  <th>LBXTR2</th>    <td>-0.001</td>   <td>0.000</td>  <td>-9.616</td>  <td>0.000</td> <td>-0.001</td> <td>-0.001</td>
+</tr>
+<tr>
+  <th>BPXDI</th>      <td>0.119</td>   <td>0.059</td>   <td>2.017</td>  <td>0.044</td>  <td>0.003</td>  <td>0.235</td>
+</tr>
+<tr>
+  <th>AGE</th>        <td>2.101</td>   <td>0.177</td>  <td>11.895</td>  <td>0.000</td>  <td>1.755</td>  <td>2.448</td>
+</tr>
+<tr>
+  <th>AGE2</th>      <td>-0.022</td>   <td>0.002</td>  <td>-11.462</td> <td>0.000</td> <td>-0.026</td> <td>-0.018</td>
+</tr>
+<tr>
+  <th>BPXSY</th>      <td>0.080</td>   <td>0.044</td>   <td>1.822</td>  <td>0.069</td> <td>-0.006</td>  <td>0.165</td>
+</tr>
+<tr>
+  <th>HEIGHT</th>    <td>-0.108</td>   <td>0.070</td>  <td>-1.533</td>  <td>0.125</td> <td>-0.246</td>  <td>0.030</td>
+</tr>
+<tr>
+  <th>CHOL</th>      <td>-0.004</td>   <td>0.003</td>  <td>-1.132</td>  <td>0.258</td> <td>-0.010</td>  <td>0.003</td>
+</tr>
+<tr>
+  <th>Group Var</th>  <td>1.897</td>   <td>0.098</td>     <td></td>       <td></td>       <td></td>       <td></td>   
+</tr>
+</table>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
     </div>
   </div>
 </body>
