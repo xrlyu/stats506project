@@ -1,0 +1,55 @@
+---
+title: "STATS 506 Group 4 Project"
+author: "Huayu Li, Kai Liu, Xiru Lyu"
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+output: 
+  html_document:
+    toc: true
+---
+# Introduction
+
+According to [Centers for Disease Control and Prevention](https://www.cdc.gov/cholesterol/facts.htm), in 2015-2016, more than 12% of adults at the age of 20 and above in the United States have cholesterol levels higher than 240mg/ml. A high cholesterol level is one of the major risk factors for coronary heart disease, heart attack and stroke. While there are two types of cholesterol, low-density lipoprotein (LDL) is known as the “bad” one that leads to the buildup of cholesterol in arteries. The goal of this project is to explore factors that can affect the level of LDL in a human body, and the result is intended to help readers gain insights on how to balance the level of LDL in order to control/prevent cardiovascular diseases.
+
+The analysis result shows that …
+
+
+# Data
+
+The data analysis is performed with the [NHANES 2015-2016 data](https://wwwn.cdc.gov/nchs/nhanes/ContinuousNhanes/Default.aspx?BeginYear=2015). The dependent variable, the level of low-density lipoprotein (LDL), measured by mg/dl, is selected from the dataset [Cholesterol - LDL & Triglycerides](https://wwwn.cdc.gov/nchs/nhanes/Search/DataPage.aspx?Component=Laboratory&CycleBeginYear=2015) of the laboratory data. Since a high level of triglyceride is believed to be associated with a high level of LDL, it is included in the model as the independent variable. Triglyceride data is also obtained from [Cholesterol - LDL & Triglycerides](https://wwwn.cdc.gov/nchs/nhanes/Search/DataPage.aspx?Component=Laboratory&CycleBeginYear=2015) of the laboratory data. We also include blood pressure readings from [Blood Pressure](https://wwwn.cdc.gov/nchs/nhanes/Search/DataPage.aspx?Component=Examination&CycleBeginYear=2015) dataset of the examination data. According to the data description, some participants have multiple blood pressure readings. For simplicity, we use averaged systolic and diastolic blood pressure readings as blood pressure measurements for each individual. Averaged intakes of fat and cholesterol, computed using both the [First](https://wwwn.cdc.gov/nchs/nhanes/Search/DataPage.aspx?Component=Dietary&CycleBeginYear=2015) and [the Second Day Total Nutrient Intakes](https://wwwn.cdc.gov/nchs/nhanes/Search/DataPage.aspx?Component=Dietary&CycleBeginYear=2015) of the dietary data, are added as independent variables as well. To account for more individual differences, we also include gender, race and age from the [Demographics Data](https://wwwn.cdc.gov/nchs/nhanes/Search/DataPage.aspx?Component=Demographics&CycleBeginYear=2015), and height, weight and BMI information from [Body Measures](https://wwwn.cdc.gov/nchs/nhanes/Search/DataPage.aspx?Component=Examination&CycleBeginYear=2015) of the examination data as additional covariates. Furthermore, SEQN, the respondent sequence number, is utilized as the unique identifier to match responses for each respondent. Finally, we removed all rows containing missing values, and there are a total of 2503 observations available for further analysis.
+
+# Methods
+
+We fit models using multiple linear regression techniques and then perform model selections to choose the model that best describes the level of LDL. For the very first model, we regress the dependent variable **LDL** on all predictors: 
+
+$\mathbf{LDL}$ ~ $\mathbf{age + race + gender + height + weight + BMI + fat + cholesterol + triglyceride + diastolic + systolic}$ (1)
+
+Note that covariates **gender** and **race** are treated as categorical variables.
+
+A check of the relationship between residuals and fitted values suggests a transformation for the dependent variable. With the help of the Box-Cox test **(attach the code? plot)**, we identify that the square root transformation is the best choice.
+We then fit a new linear model with the transformed dependent variable, **sqrt(LDL)**:
+
+$\mathbf{sqrt(LDL)}$ ~ $\mathbf{age + race + gender + height + weight + BMI + fat + cholesterol + triglyceride + diastolic + systolic}$ (2)
+
+As the model has as many as 11 covariates and some of them are insignificant under t-test, we then use the stepwise selection technique to choose variables that best explain **sqrt(LDL)**. 
+
+Besides, we consider transformations upon predictors. Considering partial residual plots **(attach plots)**, we find out that variables **age** and **triglycerides** violate the linear structure assumption. Both of these plots exhibit a quadratic form, so in addition to response variables in the full model (2) above, we add **age^2^** and **triglycerides^2^** to the linear regression model:
+
+$\mathbf{sqrt(LDL)}$ ~ $\mathbf{age + age^2 + race + gender + height + weight + BMI + fat + cholesterol + triglyceride + triglyceride^2 + diastolic + systolic}$ (3)
+
+Just as the process before, we will execute the stepwise model selection technique to choose the most significant variables of this model.
+
+Steps outlined above are carried out in R, Stata and Python. In R, we use the package [data.table](https://cran.r-project.org/web/packages/data.table/index.html) for data cleaning.
+
+
+# Core Analysis {.tabset}
+
+## R
+
+## Stata
+```{stata eval = FALSE}
+
+
+
+```
+
+## Python
