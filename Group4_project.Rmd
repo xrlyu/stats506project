@@ -43,6 +43,10 @@ Steps outlined above are carried out in R, Stata and Python. In R, we use the pa
 
 # Core Analysis {.tabset}
 
+```{r setup, echo = FALSE}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+```
+
 ## R
 
 ```{r}
@@ -57,18 +61,15 @@ library(data.table)
 library(foreign)
 library(tidyverse) 
 
-## Set the working directory: ---------------------------------------------------------
-setwd('/Users/lihuayu/Documents/UMich-New Start/506/Project')
-
 ## 80: --------------------------------------------------------------------------------
 
 ## Read the datasets
-demo=data.table(read.xport("DEMO_I.XPT"))
-tot1=data.table(read.xport("DR1TOT_I.XPT"))
-tot2=data.table(read.xport("DR2TOT_I.XPT"))
-b_pres=data.table(read.xport("BPX_I.XPT"))
-ldl=data.table(read.xport("TRIGLY_I.XPT"))
-measure=data.table(read.xport("BMX_I.XPT"))
+demo=data.table(read.xport("./Original Data/DEMO_I.XPT.txt"))
+tot1=data.table(read.xport("./Original Data/DR1TOT_I.XPT.txt"))
+tot2=data.table(read.xport("./Original Data/DR2TOT_I.XPT.txt"))
+b_pres=data.table(read.xport("./Original Data/BPX_I.XPT.txt"))
+ldl=data.table(read.xport("./Original Data/TRIGLY_I.XPT.txt"))
+measure=data.table(read.xport("./Original Data/BMX_I.XPT.txt"))
 
 ## For each dataset, choose the proper variables and make 
 ## some transformation.
@@ -270,10 +271,266 @@ grid.arrange(gend,race,mean_gend,mean_race,nrow=2)
 ```
 
 ## Stata
+
+### Data Cleaning
 ```{stata eval = FALSE}
+* import demographic data
+import sasxport "./Original Data/DEMO_I.XPT.txt", clear
+
+* rename variables
+rename riagendr gender
+rename ridageyr age
+rename ridreth3 race
+
+* select variables of focus
+keep seqn gender age race
+
+* save the cleaned demographics data
+save "./Xiru Lyu/Data/demo.dta", replace
+
+* import diet (day 1) data
+import sasxport "./Original Data/DR1TOT_I.XPT.txt", clear
+
+* rename variables
+rename dr1ttfat fat1
+rename dr1tchol chol1
+
+* select variables of interest
+keep seqn fat1 chol1
+
+* save the cleaned diet (day 1) dataset
+save "./Xiru Lyu/Data/diet1.dta", replace
+
+* import diet (day 2) data
+import sasxport "./Original Data/DR2TOT_I.XPT.txt", clear
+
+* rename variables
+rename dr2ttfat fat2
+rename dr2tchol chol2
+
+* select variables of focus
+keep seqn fat2 chol2
+
+* save the cleaned diet (day 2) dataset
+save "./Xiru Lyu/Data/diet2.dta", replace
+
+* import LDL & triglyceride data
+import sasxport "./Original Data/TRIGLY_I.XPT.txt", clear
+
+* rename variables
+rename lbdldl ldl
+rename lbxtr triglyceride
+
+* select variables of interest
+keep seqn ldl trig
+
+* save the cleaned cholesterol dataset
+save "./Xiru Lyu/Data/ldl.dta", replace
+
+* import blood pressure data
+import sasxport "./Original Data/BPX_I.XPT.txt", clear
+
+* rename variables
+rename bpxsy1 sy1
+rename bpxsy2 sy2
+rename bpxsy3 sy3
+rename bpxsy4 sy4
+rename bpxdi1 di1
+rename bpxdi2 di2
+rename bpxdi3 di3
+rename bpxdi4 di4
+
+* compute averaged systolic and diastolic blood pressure for each participant
+egen systolic = rowmean(sy1 sy2 sy3 sy4)
+egen diastolic = rowmean(di1 di2 di3 di4)
+
+* select variables of interest
+keep seqn systolic diastolic
+
+* save the cleaned blood pressure dataset
+save "./Xiru Lyu/Data/bp.dta", replace
+
+* import body measure data
+import sasxport "./Original Data/BMX_I.XPT.txt", clear
+
+* rename variables
+rename bmxwt weight
+rename bmxbmi bmi
+rename bmxht height
+
+* select variables of interest
+keep seqn weight height bmi
+
+* merge datasets by seqn
+merge 1:1 seqn using "./Xiru Lyu/Data/demo.dta"
+keep if _merge == 3
+drop _merge
+merge 1:1 seqn using "./Xiru Lyu/Data/diet1.dta"
+keep if _merge == 3
+drop _merge
+merge 1:1 seqn using "./Xiru Lyu/Data/diet2.dta"
+keep if _merge == 3
+drop _merge
+merge 1:1 seqn using "./Xiru Lyu/Data/bp.dta"
+keep if _merge == 3
+drop _merge
+merge 1:1 seqn using "./Xiru Lyu/Data/ldl.dta"
+keep if _merge == 3
+drop _merge
+
+* compute averaged intakes of fat and cholesterol
+egen fat = rowmean(fat1 fat2)
+egen chol = rowmean(chol1 chol2)
+
+* drop extra columns
+drop fat1 fat2 chol1 chol2
+
+* drop rows with missing values
+foreach var of varlist age bmi chol diastolic fat gender height ldl race ///
+seqn systolic triglyceride weight{
+drop if missing(`var')
+}
+
+* save the dataset for data analysis
+save "./Xiru Lyu/Data/final.dta", replace
+```
+
+### Models
+
+```{stata, eval = FALSE}
+* transform the dependent variable
+generate ldl2 = sqrt(ldl)
+
+* fit a multiple linear regression model
+regress ldl2 age i.race i.gender bmi weight height diastolic systolic chol ///
+fat trig
+```
+
+```{r fig.width=5, fig.height=5,echo=FALSE, fig.align="center", fig.cap="Regression Result of Full Model (2)"}
+library(png)
+library(grid)
+img <- readPNG("./Xiru Lyu/Results/full_1.png")
+ grid.raster(img)
+```
+
+```{stata, eval = FALSE}
+* backward selection
+xi: stepwise, pr(.1): regress ldl2 age i.race i.gender bmi weight height ///
+diastolic systolic chol fat triglyceride
+```
+
+```{r fig.width=5, fig.height=5,echo=FALSE, fig.align='center', fig.cap="Backward Selection Result of Full Model (2)"}
+library(png)
+library(grid)
+img <- readPNG("./Xiru Lyu/Results/backward_1.png")
+ grid.raster(img)
+```
+
+```{stata, eval = FALSE}
+* forward selection
+xi: stepwise, pe(.1): regress ldl2 age i.race i.gender bmi weight height ///
+diastolic systolioc chol fat triglyceride
+```
+
+```{r fig.width=5, fig.height=5,echo=FALSE, fig.align='center', fig.cap='Forward Selection Result of Full Model (2)'}
+library(png)
+library(grid)
+img <- readPNG("./Xiru Lyu/Results/forward_1.png")
+ grid.raster(img)
+```
+
+To be consistent with the model selection result performed in R (reasons to be discussed)
 
 
+```{stata, eval = FALSE}
+* transform covariates
+generate triglyceride2 = triglyceride^2
+generate age2 = age^2
 
+* fit a multiple linear regression model
+regress ldl2 age age2 i.race i.gender bmi weight height diastolic systolic ///
+chol fat triglyceride triglyceride2
+```
+
+```{r fig.width=5, fig.height=6,echo=FALSE, fig.align='center', fig.cap='Regression Result of Full Model (3)'}
+library(png)
+library(grid)
+img <- readPNG("./Xiru Lyu/Results/full_2.png")
+ grid.raster(img)
+```
+
+```{stata, eval = FALSE}
+* backward selection
+xi: stepwise, pr(.05): regress ldl2 age age2 i.race i.gender bmi weight  ///
+height diastolic systolic chol fat triglyceride triglyceride2
+```
+
+```{r fig.width=5, fig.height=5,echo=FALSE, fig.align='center', fig.cap='Backward Selection Result of Full Model (3)'}
+library(png)
+library(grid)
+img <- readPNG("./Xiru Lyu/Results/backward_2.png")
+ grid.raster(img)
+```
+
+```{stata, eval = FALSE}
+* forward selection
+xi: stepwise, pe(.05): regress ldl2 age age2 i.race i.gender bmi weight ///
+height diastolic systolic chol fat triglyceride triglyceride2
+```
+
+```{r fig.width=5, fig.height=5,echo=FALSE, fig.align='center', fig.cap='Forward Selection Result of Full Model (3)'}
+library(png)
+library(grid)
+img <- readPNG("./Xiru Lyu/Results/backward_2.png")
+ grid.raster(img)
+```
+
+```{stata, eval = FALSE}
+* compare AIC & BIC of two nested models
+regress ldl2 age height weight diastolic triglyceride
+estat ic
+```
+
+```{r fig.width=5, fig.height=1,echo=FALSE, fig.align='center', fig.cap='AIC for Model 2_a'}
+library(png)
+library(grid)
+img <- readPNG("./Xiru Lyu/Results/AIC_1.png")
+ grid.raster(img)
+```
+
+```{stata, eval = FALSE}
+regress ldl2 age age2 height weight bmi diastolic systolic triglyceride ///
+triglyceride2
+estat ic
+```
+
+```{r fig.width=5, fig.height=1,echo=FALSE, fig.align='center', fig.cap='AIC for Model 2_b'}
+library(png)
+library(grid)
+img <- readPNG("./Xiru Lyu/Results/AIC_2.png")
+ grid.raster(img)
 ```
 
 ## Python
+
+# Additional Analysis {.tabset}
+
+## R
+
+## Stata
+
+```{stata, eval = FALSE}
+qreg ldl2 triglyceride, quantile(0.05)
+qreg ldl2 triglyceride, quantile(0.25)
+qreg ldl2 triglyceride, quantile(0.5)
+qreg ldl2 triglyceride, quantile(0.75)
+qreg ldl2 triglyceride, quantile(0.90)
+```
+
+(attach the plot here?)
+
+## Python
+
+# Discussion
+
+# Results
