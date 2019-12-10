@@ -22,17 +22,17 @@ DT=Data[,.(gender=as.factor(gender),age,race=as.factor(race),intake_fat,intake_c
 
 ## Some regression models in the former file
 L2=lm(sqrt(ldl)~.,data=DT)
-L3_b=step(L2,direction='backward')
+L3=step(L2,direction='backward')
 L4=lm(sqrt(ldl)~gender+age+race+intake_fat+intake_chol+systolic+diastolic+
         weight+height+bmi+triglycerides+I(triglycerides^2)+I(age^2),data=DT)
-L5_b=step(L4,direction='backward')
+L5=step(L4,direction='backward')
 
 ## Graph 1: Some Diagnosis upon these models
 ### F1: Checking error assumptions--residual plots
 R1=data.table(fitted_values=L2$fitted.values,residuals=L2$residuals)
-R2=data.table(fitted_values=L3_b$fitted.values,residuals=L3_b$residuals)
+R2=data.table(fitted_values=L3$fitted.values,residuals=L3$residuals)
 R3=data.table(fitted_values=L4$fitted.values,residuals=L4$residuals)
-R4=data.table(fitted_values=L5_b$fitted.values,residuals=L5_b$residuals)
+R4=data.table(fitted_values=L5$fitted.values,residuals=L5$residuals)
 rs1=ggplot(R1,aes(x=fitted_values,y=residuals))+geom_point(size=1,colour='blue')+
   labs(title='Model 1')
 rs2=ggplot(R2,aes(x=fitted_values,y=residuals))+geom_point(size=1,colour='blue')+
@@ -55,8 +55,8 @@ qqnorm(R4$residuals, ylab="Residuals",main='Q-Q Plot of Model 4')
 qqline(R4$residuals)
 
 ## Graph 3: Partial Residual Plots upon Model 3 and 4
-crPlots(L4)
-crPlots(L5_b)
+crPlots(L4,layout=c(5,3))
+crPlots(L5)
 
 ## Graph 4: Relationships between ldl and gender/race.  We have the mean level of
 ## ldl between different gender and race (For CI, we will use the JackKnife 
