@@ -235,7 +235,7 @@ qqline(R4$residuals)
 crPlots(L4)
 crPlots(L5_b)
 
-## Graph 4: Relationships between ldl and gender/race.  We have the mean level of
+## Graph 4: Relationships between ldl and gender/race. We have the mean level of
 ## ldl between different gender and race (For CI, we will use the JackKnife 
 ## standard error.)
 Mean_JK = function(x){
