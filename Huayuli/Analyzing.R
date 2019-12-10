@@ -34,15 +34,13 @@ summary(L2)
 ## There are too many variables in the regression model, so here we will do
 ## the model selection and choose the variables. Here we do both the forward
 ## and backward selections.
-L3_a=step(L2,direction='forward')
-L3_b=step(L2,direction='backward')
-summary(L3_a)
-summary(L3_b)
+L3=step(L2,direction='both')
+summary(L3)
 
 ## By the way, in the models before, we didn't consider transformations 
 ## upon predictors; in the coming part, we will consider adding some
 ## nonlinear terms.
-crPlots(L2)
+crPlots(L2,layout=c(4,3))
 
 ## From the partial residual plots, we can find out that for triglycerides and age,
 ## some nonlinear transformation forms should be add. We add this term, and the
@@ -52,10 +50,9 @@ L4=lm(sqrt(ldl)~gender+age+race+intake_fat+intake_chol+systolic+diastolic+
 summary(L4)
 
 ## Just the same, do the model selection.
-L5_a=step(L4,direction='forward')
-L5_b=step(L4,direction='backward')
-summary(L5_a)
-summary(L5_b)
+L5=step(L4,direction='both')
+summary(L5)
+
 
 ## By the way, we will have the linear mixed model upon the dataset:
 LM=lmer(ldl~age+intake_fat+intake_chol+systolic+diastolic+

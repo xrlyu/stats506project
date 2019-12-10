@@ -25,16 +25,44 @@ $\mathbf{LDL}$ ~ $\mathbf{age + race + gender + height + weight + BMI + fat + ch
 
 Note that covariates **gender** and **race** are treated as categorical variables.
 
-A check of the relationship between residuals and fitted values suggests a transformation for the dependent variable. With the help of the Box-Cox test **(attach the code? plot)**, we identify that the square root transformation is the best choice.
+A check of the relationship between residuals and fitted values suggests a transformation for the dependent variable (shows non-linearity). 
+
+```{r fig.width=5, fig.height=5,echo=FALSE, fig.align="center", fig.cap="Residual plot of the full model"}
+library(png)
+library(grid)
+img <- readPNG("./Huayuli/Residual_plot.png")
+ grid.raster(img)
+```
+
+With the help of the Box-Cox test: 
+
+```{r fig.width=5, fig.height=5,echo=FALSE, fig.align="center", fig.cap="Box-Cox Transformation plot"}
+library(png)
+library(grid)
+img <- readPNG("./Huayuli/Boxcox.png")
+ grid.raster(img)
+```
+
+we identify that the square root transformation is the best choice.
+
 We then fit a new linear model with the transformed dependent variable, **$\sqrt{LDL}$**:
 
-$\mathbf{\sqrt{LDL}}$ ~ $\mathbf{age + race + gender + height + weight + BMI + fat + cholesterol + triglyceride + diastolic + systolic}$ (2)
+$\mathbf{\sqrt{LDL}}$ ~ $\mathbf{age + race + gender + height + weight + BMI + fat + cholesterol + triglycerides + diastolic + systolic}$ (2)
 
 As the model has as many as 11 covariates and some of them are insignificant under t-test, we then use the stepwise selection technique to choose variables that best explain **$\sqrt{LDL}$**. 
 
-Besides, we consider transformations upon predictors. Considering partial residual plots **(attach plots)**, we find out that variables **age** and **triglycerides** violate the linear structure assumption. Both of these plots exhibit a quadratic form, so in addition to response variables in the full model (2) above, we add **age^2^** and **triglycerides^2^** to the linear regression model:
+Besides, we consider transformations upon predictors. Considering partial residual plots:
 
-$\mathbf{\sqrt{LDL}}$ ~ $\mathbf{age + age^2 + race + gender + height + weight + BMI + fat + cholesterol + triglyceride + triglyceride^2 + diastolic + systolic}$ (3)
+```{r fig.width=5, fig.height=5,echo=FALSE, fig.align="center", fig.cap="Partial Residual Plot"}
+library(png)
+library(grid)
+img <- readPNG("./Huayuli/Partial.png")
+ grid.raster(img)
+```
+
+we find out that variables **age** and **triglycerides** violate the linear structure assumption. Both of these plots exhibit a quadratic form, so in addition to response variables in the full model (2) above, we add **age^2^** and **triglycerides^2^** to the linear regression model:
+
+$\mathbf{\sqrt{LDL}}$ ~ $\mathbf{age + age^2 + race + gender + height + weight + BMI + fat + cholesterol + triglycerides + triglycerides^2 + diastolic + systolic}$ (3)
 
 Just as the process before, we will execute the stepwise model selection technique to choose the most significant variables of this model.
 
@@ -168,15 +196,13 @@ summary(L2)
 ## There are too many variables in the regression model, so here we will do
 ## the model selection and choose the variables. Here we do both the forward
 ## and backward selections.
-L3_a=step(L2,direction='forward')
-L3_b=step(L2,direction='backward')
-summary(L3_a)
-summary(L3_b)
+L3=step(L2,direction='both')
+summary(L3)
 
 ## By the way, in the models before, we didn't consider transformations 
 ## upon predictors; in the coming part, we will consider adding some
 ## nonlinear terms.
-crPlots(L2)
+crPlots(L2,layout=c(4,3))
 
 ## From the partial residual plots, we can find out that for triglycerides and age,
 ## some nonlinear transformation forms should be add. We add this term, and the
@@ -186,16 +212,15 @@ L4=lm(sqrt(ldl)~gender+age+race+intake_fat+intake_chol+systolic+diastolic+
 summary(L4)
 
 ## Just the same, do the model selection.
-L5_a=step(L4,direction='forward')
-L5_b=step(L4,direction='backward')
-summary(L5_a)
-summary(L5_b)
+L5=step(L4,direction='both')
+summary(L5)
 
 ## By the way, we will have the linear mixed model upon the dataset:
 LM=lmer(ldl~age+intake_fat+intake_chol+systolic+diastolic+
           weight+height+bmi+triglycerides+(1|gender)+(1|race),data=DT)
 summary(LM)
 
+<<<<<<< HEAD
 ## Additional Analysis: Some extra graphs
 
 ## Libraries: -------------------------------------------------------------------------
@@ -268,6 +293,8 @@ mean_race=ggplot(MR,aes(x=race,y=mean_ldl))+geom_point(shape=16,col='red')+
   labs(title = 'Mean level of ldl between races')
 
 grid.arrange(gend,race,mean_gend,mean_race,nrow=2)
+=======
+>>>>>>> aecf0ed3e668686c3739a7ceff066f1d8ed1e540
 ```
 
 ## Stata
@@ -517,6 +544,81 @@ img <- readPNG("./Xiru Lyu/Results/AIC_2.png")
 
 ## R
 
+```{r}
+## Additional Analysis: Some extra graphs
+
+## Libraries: -------------------------------------------------------------------------
+library(ggplot2)
+library(gridExtra)
+
+## 80: --------------------------------------------------------------------------------
+
+## Graph 1: Some Diagnosis upon these models
+### F1: Checking error assumptions--residual plots
+R1=data.table(fitted_values=L2$fitted.values,residuals=L2$residuals)
+R2=data.table(fitted_values=L3$fitted.values,residuals=L3$residuals)
+R3=data.table(fitted_values=L4$fitted.values,residuals=L4$residuals)
+R4=data.table(fitted_values=L5$fitted.values,residuals=L5$residuals)
+rs1=ggplot(R1,aes(x=fitted_values,y=residuals))+geom_point(size=1,colour='blue')+
+  labs(title='Model 1')
+rs2=ggplot(R2,aes(x=fitted_values,y=residuals))+geom_point(size=1,colour='blue')+
+  labs(title='Model 2')
+rs3=ggplot(R3,aes(x=fitted_values,y=residuals))+geom_point(size=1,colour='blue')+
+  labs(title='Model 3')
+rs4=ggplot(R4,aes(x=fitted_values,y=residuals))+geom_point(size=1,colour='blue')+
+  labs(title='Model 4') 
+grid.arrange(rs1,rs2,rs3,rs4,nrow=2)
+  
+## Graph 2: QQ-plots of the models
+par(mfrow=c(2,2))
+qqnorm(R1$residuals, ylab="Residuals",main='Q-Q Plot of Model 1')
+qqline(R1$residuals)
+qqnorm(R2$residuals, ylab="Residuals",main='Q-Q Plot of Model 2')
+qqline(R2$residuals)
+qqnorm(R3$residuals, ylab="Residuals",main='Q-Q Plot of Model 3')
+qqline(R3$residuals)
+qqnorm(R4$residuals, ylab="Residuals",main='Q-Q Plot of Model 4')
+qqline(R4$residuals)
+
+## Graph 3: Partial Residual Plots upon Model 3 and 4
+crPlots(L4,layout=c(5,3))
+crPlots(L5)
+
+## Graph 4: Relationships between ldl and gender/race.  We have the mean level of
+## ldl between different gender and race (For CI, we will use the JackKnife 
+## standard error.)
+Mean_JK = function(x){
+  lx=length(x)
+  MX=matrix(rep(x,rep(lx-1,lx)),ncol=lx,byrow=TRUE)
+  theta=colMeans(MX)
+  mean_theta=mean(theta)
+  std_theta={(lx-1)/lx*sum((theta-mean_theta)^2)}^(1/2)
+  std_theta
+}
+
+Gend=DT[,.(gender,ldl)]
+Race=DT[,.(race,ldl)]
+MG=Gend[,.(mean_ldl=mean(ldl),l_ldl=mean(ldl)+qnorm(0.025)*Mean_JK(ldl),
+           r_ldl=mean(ldl)+qnorm(0.975)*Mean_JK(ldl)),by=gender]
+MR=Race[,.(mean_ldl=mean(ldl),l_ldl=mean(ldl)+qnorm(0.025)*Mean_JK(ldl),
+           r_ldl=mean(ldl)+qnorm(0.975)*Mean_JK(ldl)),by=race]
+
+gend=ggplot(Gend,aes(x=gender,y=ldl))+geom_point(size=1,colour='blue')+
+  labs(title='ldl~gender')
+race=ggplot(Race,aes(x=race,y=ldl))+geom_point(size=1,colour='blue')+
+  labs(title='ldl~race') 
+mean_gend=ggplot(MG,aes(x=gender,y=mean_ldl))+geom_point(shape=16,col='red')+
+  geom_segment(data=MG,mapping=aes(x=gender,xend=gender,y=l_ldl,yend=r_ldl),
+               col='blue')+
+  labs(title = 'Mean level of ldl between genders')
+mean_race=ggplot(MR,aes(x=race,y=mean_ldl))+geom_point(shape=16,col='red')+
+  geom_segment(data=MR,mapping=aes(x=race,xend=race,y=l_ldl,yend=r_ldl),
+               col='blue')+
+  labs(title = 'Mean level of ldl between races')
+
+grid.arrange(gend,race,mean_gend,mean_race,nrow=2)
+```
+
 ## Stata
 
 ```{stata, eval = FALSE}
@@ -534,3 +636,31 @@ qreg ldl2 triglyceride, quantile(0.90)
 # Discussion
 
 # Results
+
+## Stata
+
+Stepwise variable selection for our first full model, where sqrt transformation is only applied to the dependent variable, shows that a model with age, diastolic blood pressure, triglycerides, height and weight as independent variables best fits the data. Results show that height is negatively correlated with the fitted level of LDL, while other covariates are positively related. 
+
+Specifically, with other variables fixed, one year increase in age leads to approximately 0.008 unit of increase in $\sqrt{ldl}$. One unit of increase in diastolic blood pressure can increase $\sqrt{ldl}$ by 0.02 unit. One unit of increase in weight and triglycerides can bump up $\sqrt{ldl}$ by .005 and .006 unit, respectively. Finally, one unit increase in height leads to approximately 0.008 unit of decrease in $\sqrt{ldl}$. Overall, higher levels of age, diastolic blood pressure, weight, and/or triglycerides can cause higher risks of cardiovascular diseases.
+
+Stepwise variable selection for our second full model, where sqrt transformation is applied to the dependent variable, and $triglycerides^2$ and $age^2$ are included as additional independent variables, shows that a model with age, $age^2$, triglycerides, $triglycerides^2$, diastolic blood pressure, systolic blood pressure, height, weight and bmi as independent variables best fits the data. It is shown that $age^2$, height and $trig^2$ and bmi are negatively related to the fitted level of LDL, while all other covariates are positively correlated. 
+
+## R
+
+   Note that for R code, we will use data.table() package to mutating the data, and after mutating, we will focus on the analysis.
+
+   First of all, as for the regression model with $\sqrt{ldl}$ as the response and other variables as predictors, we do the backward selection, and find out that variables age, diastolic, triglycerides, weight, height are selected, and they are all significant under t-test. In this model, variables age, diastolic, triglycerides and weight are positive correlated to the fitted level of ldl, while height is negative correlated: with other variables fixed, one year of age increase leads to 0.008 unit increase in $\sqrt{ldl}$, and 1 unit diastolic increase leads to 0.02 unit increase in $\sqrt{ldl}$; 1 unit increase in triglycerides leads to 0.006 unit increase in $\sqrt{ldl}$, and for weight this will lead to 0.005 unit increase in $\sqrt{ldl}$; for height, this will lead to 0.008 unit decrease in $\sqrt{ldl}$. The $R^2$ is 0.1304, and the residual standard error is 1.603.
+   
+  For the regression model with $age^2$ and $triglycerides^2$, after model selection, we can find out that terms age, systolic, diastolic, weight, height, bmi, triglycerides, $triglycerides^2$ and $age^2$ are selected, and they are significant under t-test. The height bmi and the two square terms are negatively correlated with ldl, with other variables positively correlated with ldl. The residual standard error changes to 1.53, and the $R^2$ increases to 0.2085, which means that this model performs better than the one without square terms.
+  
+  For the linear mixed model, here we will use the package lme4 to analysis. According to the fitting result, the age, intake_fat, diastolic, weight and triglycerides are positively correlated, while the others are negatively correlated; the t-values of triglycerides, diastolic and age are really large, shows that they are important variables to this model. However, according to the random effects, the variance for race is 0.695, for gender is 0, and for residual is 1111.545, implies that the linear mixed model may not work really well.
+
+
+## Python
+
+Note for Python, we use pandas to merge and clean all the dataset.Because there is no package about step regression to help select variables, so we refer to some self-written forward step regression function based on adjusted R-square to select variables. For GLM regression, we import module sklearn.linear_model.LinearRegression.
+As for the result, to accord with my partners, when choose variables 'LBXTR'(triglycerides level), 'BPXSY'(systolic blood pressure), 'BPXDI'(diastolic blood pressure), 'FAT'(average fat intake), 'CHOL'(average Cholesterol intake), 'GENDER', 'AGE','RACE', 'HEIGHT', 'WEIGHT', 'BMI','LBXTR2'(LBXTR\times LBXTR), 'AGE2'(AGE\times AGE), I got the same result, the forward select function showed me that the significant variables should include LBXTR LBXTR2 BPXDI AGE AGE2 RACE BPXSY HEIGHT CHOL with adjusted R-square being 0.20377. After regression within LinearRegression module, the regression R-square was 0.207806, which means these data can express around 20% of cholesterol level change. Correspondingly, the coefficients of these variables are 4.37936363e-01, -9.94588617e-04,  1.12071396e-01,2.09660709e+00, -2.20899498e-02,  9.69819194e-01, 8.32880449e-02, -1.07237225e-01, -3.73454180e-03.
+
+However it seems that in python, there is no good way to set a variable factor, such as race. So to fix this problem, I used mixed model in module statsmodel, and the result showed that coefficients be:intercept 38.613, LBXTR 0.436, LBXTR2 -0.001,BPXDI 0.119, AGE 2.101, AGE2 -0.022, BPXSY 0.080, HEIGHT -0.108, CHOL -0.004, and Group Var 1.897.
+
+And from the result, we can notice that first gender has no effect on cholesterol level(mg/dl), second height to some extent affect the level rather than weight, though we may have intuition that fatter people may have more cholesterol amount, it does not change the cholesterol density(mg/dl) and maybe that is why variable fat intake here barely have impactions.  Besides though we might consider that intake will increase the relevant material level, here we see that cholesterol average intake in two days decrease the density of blood cholesterol, it might be because that two day records are not representative for a long term intake and adjust system may react to food intake in a short time just like blood glucose level in normal life, and the p-value for CHOL is the biggest 0.258 which means its true value could be zero. Third, we can notice that ‘BPXDI'(diastolic blood pressure) impact more than 'BPXSY'(systolic blood pressure). Forth, with age increasing, the cholesterol density(mg/dl) will increase by 2mg/dl per year, but the increase rate will slow down for coefficient of AGE2 is negative.
