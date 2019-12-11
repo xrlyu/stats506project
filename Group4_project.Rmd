@@ -186,12 +186,18 @@ DT=Data[,.(gender=as.factor(gender),age,race=as.factor(race),intake_fat,intake_c
 ## the residual plot of the model.
 L1=lm(ldl~.,data=DT)
 summary(L1)
-#plot(L1$fitted.values,L1$residuals)
+```
+
+```{r eval = FALSE}
+## Here we give the residual plot of the model
+plot(L1$fitted.values,L1$residuals)
 
 ## Here, it seems that some transformations should be used upon ldl. Here
 ## we do the Box-Cox test.
-#boxcox(L1,plotit=TRUE,lambda=seq(0,1,1/100))
+boxcox(L1,plotit=TRUE,lambda=seq(0,1,1/100))
+```
 
+```{r}
 ## Here it seems that lambda=0.5 is the best choice, that is, to use sqrt(ldl).
 ## Here we make the transformation and then do the regression again.
 L2=lm(sqrt(ldl)~.,data=DT)
@@ -202,12 +208,16 @@ summary(L2)
 ## and backward selections.
 L3=step(L2,direction='both',trace=FALSE)
 summary(L3)
+```
 
+```{r eval=FALSE}
 ## By the way, in the models before, we didn't consider transformations 
 ## upon predictors; in the coming part, we will consider adding some
 ## nonlinear terms.
-#crPlots(L2,layout=c(4,3))
+crPlots(L2,layout=c(4,3))
+```
 
+```{r}
 ## From the partial residual plots, we can find out that for triglycerides and age,
 ## some nonlinear transformation forms should be add. We add this term, and the
 ## regression result is as following:
