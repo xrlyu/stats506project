@@ -55,7 +55,7 @@ qqnorm(R4$residuals, ylab="Residuals",main='Q-Q Plot of Model 4')
 qqline(R4$residuals)
 
 ## Graph 3: Partial Residual Plots upon Model 3 and 4
-crPlots(L4,layout=c(5,3))
+crPlots(L4,layout=c(3,3))
 crPlots(L5)
 
 ## Graph 4: Relationships between ldl and gender/race.  We have the mean level of
