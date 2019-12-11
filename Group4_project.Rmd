@@ -219,8 +219,9 @@ summary(L5)
 LM=lmer(ldl~age+intake_fat+intake_chol+systolic+diastolic+
           weight+height+bmi+triglycerides+(1|gender)+(1|race),data=DT)
 summary(LM)
+```
 
-<<<<<<< HEAD
+```{R Additional Analysis}
 ## Additional Analysis: Some extra graphs
 
 ## Libraries: -------------------------------------------------------------------------
@@ -232,9 +233,9 @@ library(gridExtra)
 ## Graph 1: Some Diagnosis upon these models
 ### F1: Checking error assumptions--residual plots
 R1=data.table(fitted_values=L2$fitted.values,residuals=L2$residuals)
-R2=data.table(fitted_values=L3_b$fitted.values,residuals=L3_b$residuals)
+R2=data.table(fitted_values=L3$fitted.values,residuals=L3$residuals)
 R3=data.table(fitted_values=L4$fitted.values,residuals=L4$residuals)
-R4=data.table(fitted_values=L5_b$fitted.values,residuals=L5_b$residuals)
+R4=data.table(fitted_values=L5$fitted.values,residuals=L5$residuals)
 rs1=ggplot(R1,aes(x=fitted_values,y=residuals))+geom_point(size=1,colour='blue')+
   labs(title='Model 1')
 rs2=ggplot(R2,aes(x=fitted_values,y=residuals))+geom_point(size=1,colour='blue')+
@@ -258,7 +259,7 @@ qqline(R4$residuals)
 
 ## Graph 3: Partial Residual Plots upon Model 3 and 4
 crPlots(L4)
-crPlots(L5_b)
+crPlots(L5)
 
 ## Graph 4: Relationships between ldl and gender/race. We have the mean level of
 ## ldl between different gender and race (For CI, we will use the JackKnife 
@@ -293,8 +294,7 @@ mean_race=ggplot(MR,aes(x=race,y=mean_ldl))+geom_point(shape=16,col='red')+
   labs(title = 'Mean level of ldl between races')
 
 grid.arrange(gend,race,mean_gend,mean_race,nrow=2)
-=======
->>>>>>> aecf0ed3e668686c3739a7ceff066f1d8ed1e540
+
 ```
 
 ## Stata
@@ -581,7 +581,7 @@ qqnorm(R4$residuals, ylab="Residuals",main='Q-Q Plot of Model 4')
 qqline(R4$residuals)
 
 ## Graph 3: Partial Residual Plots upon Model 3 and 4
-crPlots(L4,layout=c(5,3))
+crPlots(L4,layout=c(3,3))
 crPlots(L5)
 
 ## Graph 4: Relationships between ldl and gender/race.  We have the mean level of
@@ -654,6 +654,15 @@ Stepwise variable selection for our second full model, where sqrt transformation
   For the regression model with $age^2$ and $triglycerides^2$, after model selection, we can find out that terms age, systolic, diastolic, weight, height, bmi, triglycerides, $triglycerides^2$ and $age^2$ are selected, and they are significant under t-test. The height bmi and the two square terms are negatively correlated with ldl, with other variables positively correlated with ldl. The residual standard error changes to 1.53, and the $R^2$ increases to 0.2085, which means that this model performs better than the one without square terms.
   
   For the linear mixed model, here we will use the package lme4 to analysis. According to the fitting result, the age, intake_fat, diastolic, weight and triglycerides are positively correlated, while the others are negatively correlated; the t-values of triglycerides, diastolic and age are really large, shows that they are important variables to this model. However, according to the random effects, the variance for race is 0.695, for gender is 0, and for residual is 1111.545, implies that the linear mixed model may not work really well.
+  
+  For the additional analysis, we plot the residual plots and the QQ-plots, and the result shows that the regression models satisfy the assumptions of the OLS model. By the way, we plot the relationships between ldl and gender and race, and the plots shows that the ldl level of male is slightly higher than female from the whole, and the levels for female are more centerized. For race, the ldl level of Other Race is the highest from the whole, and Non-Hispanic Black is the lowest.
+  
+  
+  
+  
+  
+  
+  
 
 
 ## Python
