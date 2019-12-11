@@ -77,6 +77,8 @@ knitr::opts_chunk$set(warning = FALSE, message = FALSE)
 
 ## R
 
+### Data Cleaning
+
 ```{r}
 ## Group Project HTML
 ## Author: Huayu Li, huayuli@umich.edu
@@ -162,9 +164,11 @@ Data=Demo%>%merge(.,TOT,by='seqn',all=FALSE)%>%
   merge(.,Measure,by='seqn',all=FALSE)%>%
   na.omit()
 
-## Now save the cleaned data
-fwrite(Data,file='Final.csv')
+```
 
+### Models
+
+```{r}
 ### Using this file for regression: ---------------------------------------------------
 
 ## Libraries: -------------------------------------------------------------------------
@@ -182,11 +186,11 @@ DT=Data[,.(gender=as.factor(gender),age,race=as.factor(race),intake_fat,intake_c
 ## the residual plot of the model.
 L1=lm(ldl~.,data=DT)
 summary(L1)
-plot(L1$fitted.values,L1$residuals)
+#plot(L1$fitted.values,L1$residuals)
 
 ## Here, it seems that some transformations should be used upon ldl. Here
 ## we do the Box-Cox test.
-boxcox(L1,plotit=TRUE,lambda=seq(0,1,1/100))
+#boxcox(L1,plotit=TRUE,lambda=seq(0,1,1/100))
 
 ## Here it seems that lambda=0.5 is the best choice, that is, to use sqrt(ldl).
 ## Here we make the transformation and then do the regression again.
@@ -196,13 +200,13 @@ summary(L2)
 ## There are too many variables in the regression model, so here we will do
 ## the model selection and choose the variables. Here we do both the forward
 ## and backward selections.
-L3=step(L2,direction='both')
+L3=step(L2,direction='both',trace=FALSE)
 summary(L3)
 
 ## By the way, in the models before, we didn't consider transformations 
 ## upon predictors; in the coming part, we will consider adding some
 ## nonlinear terms.
-crPlots(L2,layout=c(4,3))
+#crPlots(L2,layout=c(4,3))
 
 ## From the partial residual plots, we can find out that for triglycerides and age,
 ## some nonlinear transformation forms should be add. We add this term, and the
@@ -212,88 +216,8 @@ L4=lm(sqrt(ldl)~gender+age+race+intake_fat+intake_chol+systolic+diastolic+
 summary(L4)
 
 ## Just the same, do the model selection.
-L5=step(L4,direction='both')
+L5=step(L4,direction='both',trace=FALSE)
 summary(L5)
-
-## By the way, we will have the linear mixed model upon the dataset:
-LM=lmer(ldl~age+intake_fat+intake_chol+systolic+diastolic+
-          weight+height+bmi+triglycerides+(1|gender)+(1|race),data=DT)
-summary(LM)
-```
-
-```{R Additional Analysis}
-## Additional Analysis: Some extra graphs
-
-## Libraries: -------------------------------------------------------------------------
-library(ggplot2)
-library(gridExtra)
-
-## 80: --------------------------------------------------------------------------------
-
-## Graph 1: Some Diagnosis upon these models
-### F1: Checking error assumptions--residual plots
-R1=data.table(fitted_values=L2$fitted.values,residuals=L2$residuals)
-R2=data.table(fitted_values=L3$fitted.values,residuals=L3$residuals)
-R3=data.table(fitted_values=L4$fitted.values,residuals=L4$residuals)
-R4=data.table(fitted_values=L5$fitted.values,residuals=L5$residuals)
-rs1=ggplot(R1,aes(x=fitted_values,y=residuals))+geom_point(size=1,colour='blue')+
-  labs(title='Model 1')
-rs2=ggplot(R2,aes(x=fitted_values,y=residuals))+geom_point(size=1,colour='blue')+
-  labs(title='Model 2')
-rs3=ggplot(R3,aes(x=fitted_values,y=residuals))+geom_point(size=1,colour='blue')+
-  labs(title='Model 3')
-rs4=ggplot(R4,aes(x=fitted_values,y=residuals))+geom_point(size=1,colour='blue')+
-  labs(title='Model 4') 
-grid.arrange(rs1,rs2,rs3,rs4,nrow=2)
-  
-## Graph 2: QQ-plots of the models
-par(mfrow=c(2,2))
-qqnorm(R1$residuals, ylab="Residuals",main='Q-Q Plot of Model 1')
-qqline(R1$residuals)
-qqnorm(R2$residuals, ylab="Residuals",main='Q-Q Plot of Model 2')
-qqline(R2$residuals)
-qqnorm(R3$residuals, ylab="Residuals",main='Q-Q Plot of Model 3')
-qqline(R3$residuals)
-qqnorm(R4$residuals, ylab="Residuals",main='Q-Q Plot of Model 4')
-qqline(R4$residuals)
-
-## Graph 3: Partial Residual Plots upon Model 3 and 4
-crPlots(L4)
-crPlots(L5)
-
-## Graph 4: Relationships between ldl and gender/race. We have the mean level of
-## ldl between different gender and race (For CI, we will use the JackKnife 
-## standard error.)
-Mean_JK = function(x){
-  lx=length(x)
-  MX=matrix(rep(x,rep(lx-1,lx)),ncol=lx,byrow=TRUE)
-  theta=colMeans(MX)
-  mean_theta=mean(theta)
-  std_theta={(lx-1)/lx*sum((theta-mean_theta)^2)}^(1/2)
-  std_theta
-}
-
-Gend=DT[,.(gender,ldl)]
-Race=DT[,.(race,ldl)]
-MG=Gend[,.(mean_ldl=mean(ldl),l_ldl=mean(ldl)+qnorm(0.025)*Mean_JK(ldl),
-           r_ldl=mean(ldl)+qnorm(0.975)*Mean_JK(ldl)),by=gender]
-MR=Race[,.(mean_ldl=mean(ldl),l_ldl=mean(ldl)+qnorm(0.025)*Mean_JK(ldl),
-           r_ldl=mean(ldl)+qnorm(0.975)*Mean_JK(ldl)),by=race]
-
-gend=ggplot(Gend,aes(x=gender,y=ldl))+geom_point(size=1,colour='blue')+
-  labs(title='ldl~gender')
-race=ggplot(Race,aes(x=race,y=ldl))+geom_point(size=1,colour='blue')+
-  labs(title='ldl~race') 
-mean_gend=ggplot(MG,aes(x=gender,y=mean_ldl))+geom_point(shape=16,col='red')+
-  geom_segment(data=MG,mapping=aes(x=gender,xend=gender,y=l_ldl,yend=r_ldl),
-               col='blue')+
-  labs(title = 'Mean level of ldl between genders')
-mean_race=ggplot(MR,aes(x=race,y=mean_ldl))+geom_point(shape=16,col='red')+
-  geom_segment(data=MR,mapping=aes(x=race,xend=race,y=l_ldl,yend=r_ldl),
-               col='blue')+
-  labs(title = 'Mean level of ldl between races')
-
-grid.arrange(gend,race,mean_gend,mean_race,nrow=2)
 
 ```
 
@@ -553,6 +477,20 @@ library(gridExtra)
 
 ## 80: --------------------------------------------------------------------------------
 
+```
+
+### Linear mixed model
+
+```{r}
+## Before graphing, we will have the linear mixed model upon the dataset:
+LM=lmer(ldl~age+intake_fat+intake_chol+systolic+diastolic+
+          weight+height+bmi+triglycerides+(1|gender)+(1|race),data=DT)
+summary(LM)
+```
+
+### Graphing
+
+```{r}
 ## Graph 1: Some Diagnosis upon these models
 ### F1: Checking error assumptions--residual plots
 R1=data.table(fitted_values=L2$fitted.values,residuals=L2$residuals)
