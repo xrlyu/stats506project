@@ -494,6 +494,8 @@ use_virtualenv(virtualenv = "r-reticulate")
 use_python("/Users/lihuayu/anaconda3/bin/python")
 ```
 
+Note for Python, we use pandas to merge and clean all the dataset.Because there is no package about step regression to help select variables, so we refer to some self-written forward step regression function based on adjusted R-square to select variables. For GLM regression, we import module sklearn.linear_model.LinearRegression.
+
 ### Data Cleaning
 
 ```{python}
@@ -506,37 +508,38 @@ BPX=pd.read_sas(r'./Original Data/BPX_I.XPT',encoding='utf8')
 DEMO=pd.read_sas(r'./Original Data/DEMO_I.XPT',encoding='utf8')
 BMI=pd.read_sas(r'./Original Data/BMX_I.XPT',encoding='utf8')
 
-LDL=LDLdata[['SEQN','LBXTR', 'LBDLDL']]
+LDL=LDLdata[['SEQN','LBXTR', 'LBDLDL']]#select cols
 #WTSAF2YR:MEC weight
 #LBXTR: triglyceride(mg/dl)
 #LBDLDL:  LDL mg/dl
 
 BloodP=BPX[['SEQN']]
-BloodP['BPXSY']=np.nanmean(BPX[['BPXSY1','BPXSY2','BPXSY3','BPXSY4']],axis=1)
+BloodP['BPXSY']=np.nanmean(BPX[['BPXSY1','BPXSY2','BPXSY3','BPXSY4']],axis=1)#mean value omitting na value
 BloodP['BPXDI']=np.nanmean(BPX[['BPXDI1','BPXDI2','BPXDI3','BPXDI4']],axis=1)
-BloodP
 
-drday1=DR1[['SEQN','DR1TTFAT','DR1TCHOL']]
+
+drday1=DR1[['SEQN','DR1TTFAT','DR1TCHOL']] #select cols
 drday2=DR2[['SEQN','DR2TTFAT','DR2TCHOL']]
-drboth=pd.merge(drday1,drday2,how='inner',on='SEQN')
+drboth=pd.merge(drday1,drday2,how='inner',on='SEQN')#merge table
 drboth['FAT']=np.nanmean(drboth[['DR1TTFAT','DR2TTFAT']],axis=1)
 drboth['CHOL']=np.nanmean(drboth[['DR1TCHOL','DR2TCHOL']],axis=1)
 dr=drboth[['SEQN','FAT','CHOL']]
 demo=DEMO[['SEQN','RIAGENDR','RIDAGEYR','RIDRETH3']]
 #ID,GENDER,AGE,RACE(FACTOR)
-demo.rename(columns={'RIAGENDR':'GENDER','RIDAGEYR':'AGE','RIDRETH3':'RACE'},inplace=True)
+demo.rename(columns={'RIAGENDR':'GENDER','RIDAGEYR':'AGE','RIDRETH3':'RACE'},inplace=True)#rename colnames
 BMI=BMI[['SEQN','BMXHT','BMXWT','BMXBMI']]
 #ID,HEIGHT,WEIGHT
 BMI.columns=['SEQN','HEIGHT','WEIGHT','BMI']
+#merge tables
 Data=pd.merge(LDL,BloodP,how='inner',on='SEQN')
 Data=pd.merge(Data,dr,how='inner',on='SEQN')
 Data=pd.merge(Data,demo,how='inner',on='SEQN')
 Data=pd.merge(Data,BMI,how='inner',on='SEQN')
 
 Data=Data.dropna(axis=0)
-Data.columns
 
 Data.to_csv(r'./kaliu python/Data1.csv',index=None)
+#save table
 ```
 
 ### Modeling
@@ -553,7 +556,7 @@ import statsmodels.api as sm
 ```
 
 ```{python}
-## code from github, link  https://github.com/talhahascelik/python_stepwiseSelection/blob/master/stepwiseSelection.py
+## forward backward model selection code from github, link  https://github.com/talhahascelik/python_stepwiseSelection/blob/master/stepwiseSelection.py
 
 #Copyright 2019 Sinan Talha Hascelik
 #
@@ -857,9 +860,9 @@ def __backwardSelectionRaw__(X, y, model_type ="linear",elimination_criteria = "
     iterations_log += "\n"+str(model.summary())+"\nAIC: "+ str(model.aic) + "\nBIC: "+ str(model.bic)+"\n"
     return cols, iterations_log
     
-Data=pd.read_csv(r'./kaliu python/Data1.csv')
+Data=pd.read_csv(r'./kaliu python/Data1.csv')#read table
 Data=Data.drop(['SEQN'],axis=1)#drop the id variable 'SEQN' 
-
+#python seems has no direct code to deal factor variables like R
 RACE=pd.get_dummies(Data['RACE'])
 RACENAME=['Mexican American','Other Hispanic','Non-Hispanic White','Non-Hispanic Black','Non-Hispanic Asian','Other Race']
 RACE.columns=[ i for i in RACENAME]
@@ -886,6 +889,7 @@ lm1.summary()     # coefficient table
 From result, many coefficient are not significant, so to better select variables, we are going to see the resdisual condition and use boxcox to help.
 
 ```{python}
+#plot residual vesus y-fitted
 res1=lm1.resid
 y1_fit=lm1.predict(x1)
 fig1=plt.figure(figsize=(8,6))
@@ -914,9 +918,10 @@ First, we plot y_fit versus residual, then we plot QQplot of residual, and we ca
 
 ```{python}
 #boxcox
-y2=np.array(y1).flatten()
+y2=np.array(y1).flatten() #get pandas col as list(like vector in R)
 fig2=plt.figure()
 ax = fig2.add_subplot(111)
+#plot boxcox
 prob=stats.boxcox_normplot(y2,0,1,plot=ax)
 _, maxlog=stats.boxcox(y2)
 ax.axvline(maxlog,color='r')
@@ -926,23 +931,26 @@ plt.show()
 From the plot, we can tansform the y value to $y^\lambda$, when lambda is around 0.4, then result seems best,to make it simple we pick $\lambda=0.5$.
 
 ```{python}
-Data['LDL']=(Data[['LBDLDL']])**0.5 # transform the y value to y**0.5
+Data['LDL']=(Data[['LBDLDL']])**0.5 # transform the y value to y**0.5 as picked 
 Data=Data.drop(['LBDLDL'],axis=1)
 
 y3=Data[['LDL']]
 x3=Data.drop(['LDL'],axis=1)
+#select model
 final_vars,_=forwardSelection(x3,y3,model_type='linear',elimination_criteria='aic')
 
 final_vars,_=backwardSelection(x3,y3,model_type='linear',elimination_criteria='aic')
 ```
 
 ```{python include=FALSE}
+#plot ccpr with varibles selected
 x4=Data[['LBXTR', 'BPXDI', 'AGE', 'HEIGHT', 'WEIGHT']]
 x4=sm.add_constant(x4)
 lm2=sm.OLS(y3.astype(float),x4.astype(float)).fit()
 for i in range(5):
     name=x4.columns[i+1]
-    sm.graphics.plot_ccpr(lm2,name) # https://en.wikipedia.org/wiki/Partial_residual_plot  
+    sm.graphics.plot_ccpr(lm2,name) 
+    #https://en.wikipedia.org/wiki/Partial_residual_plot  
     #The CCPR (component and component-plus-residual) plot is a refinement of the partial residual plot
 plt.show()
 ```
@@ -989,7 +997,7 @@ Data['AGE2']=Data[['AGE']]*Data[['AGE']]
 Data['LBXTR2']=Data[['LBXTR']]*Data[['LBXTR']]
 y5=Data[['LDL']]
 x5=Data.drop(['LDL'],axis=1)
-
+#add new variables and reslect model
 final_vars,_=forwardSelection(x5,y5,model_type='linear',elimination_criteria='aic')
 
 final_vars,_=backwardSelection(x5,y5,model_type='linear',elimination_criteria='aic')
@@ -998,9 +1006,12 @@ final_vars,_=backwardSelection(x5,y5,model_type='linear',elimination_criteria='a
 From AIC comparison, we select variables 'LBXTR', 'BPXSY', 'BPXDI', 'AGE', 'HEIGHT', 'WEIGHT', 'BMI', 'RACE', 'AGE2', 'LBXTR2'
 
 ```{python}
+#part of race as selected, it is little strange to put part varibles in, so I put all the race varaibles in the final model, and my model may little differ from my groups
 y=Data[['LDL']]
 x=Data[['LBXTR', 'BPXSY', 'BPXDI', 'AGE', 'HEIGHT', 'WEIGHT', 'BMI','Other Hispanic','Non-Hispanic White','Non-Hispanic Black','Non-Hispanic Asian','Other Race', 'AGE2', 'LBXTR2']]
 #here we add all RACE types except RACE='Mexican American', which is viewed as base
+
+#reg and see final selected model coeffs
 x=sm.add_constant(x)
 lm_final=sm.OLS(y.astype(float),x.astype(float)).fit()
 lm_final.summary()
@@ -1169,18 +1180,19 @@ The quantile plot above shows that the level of triglyceride has positive correl
 
 ```{python}
 # additional analysis
-#quantile regression
+#quantile regression: sqrt(LDL)~AGE
 mod=smf.quantreg('LDL~AGE',Data)
-quantiles = np.arange(.05, .96, .1)
-def fit_model(q):       # learned seaborn from and this function origin from https://www.cnblogs.com/caiyishuai/p/11184166.html
+quantiles = np.arange(.05, .95, .1)#ser quantile level
+def fit_model(q):   #def  a quantile regression function
     res = mod.fit(q=q)
     return [q, res.params['Intercept'], res.params['AGE']] + \
             res.conf_int().loc['AGE'].tolist()
 
 models = [fit_model(x) for x in quantiles]
+#set columns for quantile interception slope CI(lower_bound,up_bound)
 models = pd.DataFrame(models, columns=['q', 'a', 'b', 'lower_b', 'upper_b'])
 
-ols = smf.ols('LDL ~ AGE', Data).fit()
+ols = smf.ols('LDL ~ AGE', Data).fit()  #normal reg 
 ols_ci = ols.conf_int().loc['AGE'].tolist()
 ols = dict(a = ols.params['Intercept'],
            b = ols.params['AGE'],
@@ -1189,15 +1201,30 @@ ols = dict(a = ols.params['Intercept'],
 
 print(models)
 print(ols)
-
+#plot quantile fig line by line
 x = np.arange(Data.AGE.min(), Data.AGE.max()+1, 1)
 get_y = lambda a, b: a + b * x
 
 fig, ax = plt.subplots(figsize=(8, 6))
+y = get_y(models.a[0], models.b[0])
+ax.plot(x, y, linestyle='dotted', color='c',label='tau=0.05')
+y = get_y(models.a[1], models.b[1])
+ax.plot(x, y, linestyle='dotted', color='g',label='tau=0.15')
+y = get_y(models.a[2], models.b[2])
+ax.plot(x, y, linestyle='dotted', color='b',label='tau=0.25')
+y = get_y(models.a[3], models.b[3])
+ax.plot(x, y, linestyle='dotted', color='c',label='tau=0.35')
+y = get_y(models.a[4], models.b[4])
+ax.plot(x, y, linestyle='dotted', color='g',label='tau=0.45')
+y = get_y(models.a[5], models.b[5])
+ax.plot(x, y, linestyle='dotted', color='b',label='tau=0.55')
+y = get_y(models.a[6], models.b[6])
+ax.plot(x, y, linestyle='dotted', color='c',label='tau=0.65')
+y = get_y(models.a[7], models.b[7])
+ax.plot(x, y, linestyle='dotted', color='g',label='tau=0.75')
+y = get_y(models.a[8], models.b[8])
+ax.plot(x, y, linestyle='dotted', color='b',label='tau=0.85')
 
-for i in range(models.shape[0]):
-    y = get_y(models.a[i], models.b[i])
-    ax.plot(x, y, linestyle='dotted', color='g')
 
 y = get_y(ols['a'], ols['b'])
 
@@ -1208,13 +1235,7 @@ ax.set_ylim((3.0, 17.5))
 legend = ax.legend()
 ax.set_xlabel('AGE', fontsize=16)
 ax.set_ylabel('LDL(sqrt_LDL)', fontsize=16);
-```
-
-```{r fig.width=5.5, fig.height=5.5,echo=FALSE, fig.align="left", fig.cap="Quantile reg: sqrt(ldl)~age"}
-library(png)
-library(grid)
-img <- readPNG("./kaliu python/failed picture in R markdwon/49.png")
- grid.raster(img)
+plt.show()
 ```
 
 # Discussion
@@ -1225,11 +1246,9 @@ For the tool using `data.table` in R, the model selection function is just as `s
 
 # Results
 
-## Python
+From the analysis before, we can get the following results. From the predictors given, the `age`, `systolic`, `diastolic`, `weight`, `height`, `bmi`, `triglycerides`, $triglycerides^2$, $age^2$ are the significant predictors taht effect the level of `ldl`; the `age`, `systolic`, `diastolic`,`weight` and `triglycerides` predictors have the positive effect, and `height` and `bmi` have the negative effect. For `triglycerides` and `age`, with the predictors increase, the level of $\sqrt{ldl}$ with increase slower and slower, because the coefficient of $triglycerides^2$ and $age^2$ are negative.
 
-Note for Python, we use pandas to merge and clean all the dataset.Because there is no package about step regression to help select variables, so we refer to some self-written forward step regression function based on adjusted R-square to select variables. For GLM regression, we import module sklearn.linear_model.LinearRegression.
-As for the result, to accord with my partners, when choose variables 'LBXTR'(triglycerides level), 'BPXSY'(systolic blood pressure), 'BPXDI'(diastolic blood pressure), 'FAT'(average fat intake), 'CHOL'(average Cholesterol intake), 'GENDER', 'AGE','RACE', 'HEIGHT', 'WEIGHT', 'BMI','LBXTR2'(LBXTR\times LBXTR), 'AGE2'(AGE\times AGE), I got the same result, the forward select function showed me that the significant variables should include LBXTR LBXTR2 BPXDI AGE AGE2 RACE BPXSY HEIGHT CHOL with adjusted R-square being 0.20377. After regression within LinearRegression module, the regression R-square was 0.207806, which means these data can express around 20% of cholesterol level change. Correspondingly, the coefficients of these variables are 4.37936363e-01, -9.94588617e-04,  1.12071396e-01,2.09660709e+00, -2.20899498e-02,  9.69819194e-01, 8.32880449e-02, -1.07237225e-01, -3.73454180e-03.
 
-However it seems that in python, there is no good way to set a variable factor, such as race. So to fix this problem, I used mixed model in module statsmodel, and the result showed that coefficients be:intercept 38.613, LBXTR 0.436, LBXTR2 -0.001,BPXDI 0.119, AGE 2.101, AGE2 -0.022, BPXSY 0.080, HEIGHT -0.108, CHOL -0.004, and Group Var 1.897.
 
-And from the result, we can notice that first gender has no effect on cholesterol level(mg/dl), second height to some extent affect the level rather than weight, though we may have intuition that fatter people may have more cholesterol amount, it does not change the cholesterol density(mg/dl) and maybe that is why variable fat intake here barely have impactions.  Besides though we might consider that intake will increase the relevant material level, here we see that cholesterol average intake in two days decrease the density of blood cholesterol, it might be because that two day records are not representative for a long term intake and adjust system may react to food intake in a short time just like blood glucose level in normal life, and the p-value for CHOL is the biggest 0.258 which means its true value could be zero. Third, we can notice that ‘BPXDI'(diastolic blood pressure) impact more than 'BPXSY'(systolic blood pressure). Forth, with age increasing, the cholesterol density(mg/dl) will increase by 2mg/dl per year, but the increase rate will slow down for coefficient of AGE2 is negative.
+
+
