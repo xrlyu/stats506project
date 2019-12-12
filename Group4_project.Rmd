@@ -77,6 +77,8 @@ knitr::opts_chunk$set(warning = FALSE, message = FALSE)
 
 ## R
 
+   Note that for R code, we will use data.table() package to mutating the data, and after mutating, we will focus on the analysis.
+   
 ### Data Cleaning
 
 ```{r}
@@ -210,6 +212,10 @@ L3=step(L2,direction='both',trace=FALSE)
 summary(L3)
 ```
 
+From the output result, we find out that variables age, diastolic, triglycerides, weight, height are selected, and they are all significant under t-test. 
+
+In this model, variables age, diastolic, triglycerides and weight are positive correlated to the fitted level of ldl, while height is negative correlated: with other variables fixed, one year of age increase leads to 0.008 unit increase in $\sqrt{ldl}$, and 1 unit diastolic increase leads to 0.02 unit increase in $\sqrt{ldl}$; 1 unit increase in triglycerides leads to 0.006 unit increase in $\sqrt{ldl}$, and for weight this will lead to 0.005 unit increase in $\sqrt{ldl}$; for height, this will lead to 0.008 unit decrease in $\sqrt{ldl}$. The $R^2$ is 0.1304, and the residual standard error is 1.603.
+
 ```{r eval=FALSE}
 ## By the way, in the models before, we didn't consider transformations 
 ## upon predictors; in the coming part, we will consider adding some
@@ -230,6 +236,9 @@ L5=step(L4,direction='both',trace=FALSE)
 summary(L5)
 
 ```
+
+  After model selection, we can find out that terms age, systolic, diastolic, weight, height, bmi, triglycerides, $triglycerides^2$ and $age^2$ are selected, and they are significant under t-test. The `height` `bmi` and the two square terms are negatively correlated with `ldl`, with other variables positively correlated with `ldl`. The residual standard error changes to 1.53, and the $R^2$ increases to 0.2085, which means that this model performs better than the one without square terms.
+
 
 ## Stata
 
@@ -1024,6 +1033,9 @@ LM=lmer(ldl~age+intake_fat+intake_chol+systolic+diastolic+
           weight+height+bmi+triglycerides+(1|gender)+(1|race),data=DT)
 summary(LM)
 ```
+  
+   According to the fitting result, the age, intake_fat, diastolic, weight and triglycerides are positively correlated, while the others are negatively correlated; the t-values of triglycerides, diastolic and age are really large, shows that they are important variables to this model. However, according to the random effects, the variance for race is 0.695, for gender is 0, and for residual is 1111.545, implies that the linear mixed model may not work really well.
+
 
 ### Graphing
 
@@ -1093,6 +1105,8 @@ mean_race=ggplot(MR,aes(x=race,y=mean_ldl))+geom_point(shape=16,col='red')+
 
 grid.arrange(gend,race,mean_gend,mean_race,nrow=2)
 ```
+
+  Here we plot the residual plots and the QQ-plots, and the result shows that the regression models satisfy the assumptions of the OLS model. By the way, we plot the relationships between ldl and gender and race, and the plots shows that the ldl level of male is slightly higher than female from the whole, and the levels for female are more centerized. For race, the ldl level of Other Race is the highest from the whole, and Non-Hispanic Black is the lowest.
 
 ## Stata
 I am interested in exploring the specific relationship between the level of triglyceride and the response varaiable $\sqrt{ldl}$. In partcular, does the relationship varies with the specific quantile of triglyceride? I used quantile regression to find the answer. 
@@ -1210,18 +1224,6 @@ All of the three tools above use the stepwise model selection technique to choos
 For the tool using `data.table` in R, the model selection function is just as `step(,direction='')`, and the direction choose is `both`; note that the selection criterion is by AIC. For Stata, the model selection technique is performed using `stepwise`, and the selection criterion is based on p-values. As Stata cannot perform the stepwise selection in both directions, separate forward and backward selections are performed, and p-values are tuned so that model selection results match those by R. For Python, the code for backward and forward selections are downloaded from the given Github site, and the selection criteria is by AIC. As the model selection technique differs for Python in selecting categorical variables of multiple levels, the final regression results by Python are slightly different from those by R and Stata.
 
 # Results
-
-## R
-
-   Note that for R code, we will use data.table() package to mutating the data, and after mutating, we will focus on the analysis.
-
-   First of all, as for the regression model with $\sqrt{ldl}$ as the response and other variables as predictors, we do the backward selection, and find out that variables age, diastolic, triglycerides, weight, height are selected, and they are all significant under t-test. In this model, variables age, diastolic, triglycerides and weight are positive correlated to the fitted level of ldl, while height is negative correlated: with other variables fixed, one year of age increase leads to 0.008 unit increase in $\sqrt{ldl}$, and 1 unit diastolic increase leads to 0.02 unit increase in $\sqrt{ldl}$; 1 unit increase in triglycerides leads to 0.006 unit increase in $\sqrt{ldl}$, and for weight this will lead to 0.005 unit increase in $\sqrt{ldl}$; for height, this will lead to 0.008 unit decrease in $\sqrt{ldl}$. The $R^2$ is 0.1304, and the residual standard error is 1.603.
-   
-  For the regression model with $age^2$ and $triglycerides^2$, after model selection, we can find out that terms age, systolic, diastolic, weight, height, bmi, triglycerides, $triglycerides^2$ and $age^2$ are selected, and they are significant under t-test. The height bmi and the two square terms are negatively correlated with ldl, with other variables positively correlated with ldl. The residual standard error changes to 1.53, and the $R^2$ increases to 0.2085, which means that this model performs better than the one without square terms.
-  
-  For the linear mixed model, here we will use the package lme4 to analysis. According to the fitting result, the age, intake_fat, diastolic, weight and triglycerides are positively correlated, while the others are negatively correlated; the t-values of triglycerides, diastolic and age are really large, shows that they are important variables to this model. However, according to the random effects, the variance for race is 0.695, for gender is 0, and for residual is 1111.545, implies that the linear mixed model may not work really well.
-  
-  For the additional analysis, we plot the residual plots and the QQ-plots, and the result shows that the regression models satisfy the assumptions of the OLS model. By the way, we plot the relationships between ldl and gender and race, and the plots shows that the ldl level of male is slightly higher than female from the whole, and the levels for female are more centerized. For race, the ldl level of Other Race is the highest from the whole, and Non-Hispanic Black is the lowest.
 
 ## Python
 
