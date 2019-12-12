@@ -10,7 +10,7 @@ output:
 
 According to [Centers for Disease Control and Prevention](https://www.cdc.gov/cholesterol/facts.htm), in 2015-2016, more than 12% of adults at the age of 20 and above in the United States have cholesterol levels higher than 240mg/ml. A high cholesterol level is one of the major risk factors for coronary heart disease, heart attack and stroke. While there are two types of cholesterol, low-density lipoprotein (LDL) is known as the “bad” one that leads to the buildup of cholesterol in arteries. The goal of this project is to explore factors that can affect the level of LDL in a human body, and the result is intended to help readers gain insights on how to balance the level of LDL in order to control/prevent cardiovascular diseases.
 
-The analysis result shows that …
+The analysis result shows that age, weight, height, BMI, systolic and diastolic blood pressures, and the level of triglyceride are factors that can explain the variation in the level of LDL.
 
 
 # Data
@@ -25,7 +25,7 @@ $\mathbf{LDL}$ ~ $\mathbf{age + race + gender + height + weight + BMI + fat + ch
 
 Note that covariates **gender** and **race** are treated as categorical variables.
 
-A check of the relationship between residuals and fitted values suggests a transformation for the dependent variable (shows non-linearity). 
+A check of the relationship between residuals and fitted values suggests a transformation for the dependent variable. 
 
 ```{r fig.width=5, fig.height=5,echo=FALSE, fig.align="center", fig.cap="Residual plot of the full model"}
 library(png)
@@ -72,13 +72,11 @@ Steps outlined above are carried out in R, Stata and Python. In R, we use the pa
 # Core Analysis {.tabset}
 
 ```{r setup, echo = FALSE}
-knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+knitr::opts_chunk$set(warning = FALSE, message = FALSE, error = FALSE)
 ```
 
 ## R
 
-   Note that for R code, we will use data.table() package to mutating the data, and after mutating, we will focus on the analysis.
-   
 ### Data Cleaning
 
 ```{r}
@@ -237,7 +235,7 @@ summary(L5)
 
 ```
 
-  After model selection, we can find out that terms age, systolic, diastolic, weight, height, bmi, triglycerides, $triglycerides^2$ and $age^2$ are selected, and they are significant under t-test. The `height` `bmi` and the two square terms are negatively correlated with `ldl`, with other variables positively correlated with `ldl`. The residual standard error changes to 1.53, and the $R^2$ increases to 0.2085, which means that this model performs better than the one without square terms.
+After model selection, we can find out that terms age, systolic, diastolic, weight, height, bmi, triglycerides, $triglycerides^2$ and $age^2$ are selected, and they are significant under t-test. The `height` `bmi` and the two square terms are negatively correlated with `ldl`, with other variables positively correlated with `ldl`. The residual standard error changes to 1.53, and the $R^2$ increases to 0.2085, which means that this model performs better than the one without square terms.
 
 
 ## Stata
@@ -482,7 +480,7 @@ img <- readPNG("./Xiru Lyu/Results/AIC_2.png")
  grid.raster(img)
 ```
 
-A comparison for AIC/BIC for two nested models shows that the model $\mathbf{\sqrt{LDL}}$ ~ $\mathbf{age + age^2 + height + weight + BMI + triglyceride + triglyceride^2 + diastolic + systolic}$ is a better one. Inferential statistics for the model is produced below. Covariates age, triglyceride, weight, diastolic and systolic blood pressures are positively correlated with the level of LDL, while **\{age^2}**, **\{triglyceride^2}** and **BMI** are negatively correlated with the response variable.
+A comparison for AIC/BIC for two nested models shows that the model $\mathbf{\sqrt{LDL}}$ ~ $\mathbf{age + age^2 + height + weight + BMI + triglyceride + triglyceride^2 + diastolic + systolic}$ is the better one. Inferential statistics for the model is produced below. Covariates age, triglyceride, weight, diastolic and systolic blood pressures are positively correlated with the level of LDL, while **$age^2$**, **$triglyceride^2$** and **BMI** are negatively correlated with the response variable.
 
 Specifically, with other variables fixed, one year increase in age leads to approximately 0.10 unit of increase in $\sqrt{ldl}$. Also, the rate of increase for the level of $\sqrt{ldl}$ slows down as one ages. One unit of increase in diastolic blood pressure can increase $\sqrt{ldl}$ by 0.006 unit. One unit of increase in systolic blood pressure can increase $\sqrt{ldl}$ by 0.004 unit. One unit of increase in BMI decreases $\sqrt{ldl}$ by 0.075 unit. One unit of increase in weight and triglyceride can bump up $\sqrt{ldl}$ by .026 and .021 unit, respectively. Finally, one unit increase in height leads to approximately 0.026 unit of decrease in $\sqrt{ldl}$. 
 
@@ -490,15 +488,21 @@ Specifically, with other variables fixed, one year increase in age leads to appr
 
 ```{r include=FALSE}
 library(reticulate)
+# py_install("pandas")
+# py_install("numpy")
+# py_install("sklearn")
+# py_install("statsmodels")
+# py_install("matplotlib")
+# py_install("pylab")
 use_virtualenv(virtualenv = "r-reticulate")
-use_python("/Users/lihuayu/anaconda3/bin/python")
+# use_python("/Library/Frameworks/Python.framework/Versions/3.7/lib/python3.7")
 ```
 
-Note for Python, we use pandas to merge and clean all the dataset.Because there is no package about step regression to help select variables, so we refer to some self-written forward step regression function based on adjusted R-square to select variables. For GLM regression, we import module sklearn.linear_model.LinearRegression.
+Note for Python, we use pandas to merge and clean all datasets. Because there is no package to perform stepwise model selection, so we refer outsource codes from the internet for stepwise selection by AIC. Links for reference are attached to code chunks below.
 
 ### Data Cleaning
 
-```{python}
+```{python, message=FALSE, warning=FALSE}
 import pandas as pd
 import numpy as np
 LDLdata=pd.read_sas(r'./Original Data/TRIGLY_I.XPT',encoding='utf8')
@@ -538,13 +542,13 @@ Data=pd.merge(Data,BMI,how='inner',on='SEQN')
 
 Data=Data.dropna(axis=0)
 
-Data.to_csv(r'./kaliu python/Data1.csv',index=None)
+Data.to_csv(r'Data1.csv',index=None)
 #save table
 ```
 
 ### Modeling
 
-```{python}
+```{python, message=FALSE, warning=FALSE}
 import pandas as pd
 import numpy as np
 from sklearn import linear_model
@@ -555,7 +559,7 @@ import pylab
 import statsmodels.api as sm
 ```
 
-```{python}
+```{python, include=FALSE}
 ## forward backward model selection code from github, link  https://github.com/talhahascelik/python_stepwiseSelection/blob/master/stepwiseSelection.py
 
 #Copyright 2019 Sinan Talha Hascelik
@@ -859,8 +863,9 @@ def __backwardSelectionRaw__(X, y, model_type ="linear",elimination_criteria = "
     print("Final Variables:", cols)
     iterations_log += "\n"+str(model.summary())+"\nAIC: "+ str(model.aic) + "\nBIC: "+ str(model.bic)+"\n"
     return cols, iterations_log
-    
-Data=pd.read_csv(r'./kaliu python/Data1.csv')#read table
+```
+```{python}
+Data=pd.read_csv(r'Data1.csv')#read table
 Data=Data.drop(['SEQN'],axis=1)#drop the id variable 'SEQN' 
 #python seems has no direct code to deal factor variables like R
 RACE=pd.get_dummies(Data['RACE'])
@@ -886,8 +891,6 @@ lm1.summary()     # coefficient table
 
 ```
 
-From result, many coefficient are not significant, so to better select variables, we are going to see the resdisual condition and use boxcox to help.
-
 ```{python}
 #plot residual vesus y-fitted
 res1=lm1.resid
@@ -900,7 +903,7 @@ plt.xlabel('Y-fitted value')
 plt.show()
 ```
 
-```{python}
+```{python, eval = FALSE}
 res = lm1.resid  # residuals
 stats.probplot(res, dist="norm", plot=pylab) # QQplot, simliar to fig = sm.qqplot(res)
 pylab.show()
@@ -914,10 +917,10 @@ img <- readPNG("./kaliu python/failed picture in R markdwon/38.png")
 ```
 
 
-First, we plot y_fit versus residual, then we plot QQplot of residual, and we can see that the QQplot shows that the residual is not really normal.
+First, we graph the QQ-plot of residuals, and we can see errors deviate a bit from the normality assumption.
 
 ```{python}
-#boxcox
+# boxcox
 y2=np.array(y1).flatten() #get pandas col as list(like vector in R)
 fig2=plt.figure()
 ax = fig2.add_subplot(111)
@@ -928,7 +931,7 @@ ax.axvline(maxlog,color='r')
 plt.show()
 ```
 
-From the plot, we can tansform the y value to $y^\lambda$, when lambda is around 0.4, then result seems best,to make it simple we pick $\lambda=0.5$.
+From the plot, we can transform the response to $y^\lambda$, and the result seems the best when lambda is around 0.4. For simplicity, we pick $\lambda=0.5$.
 
 ```{python}
 Data['LDL']=(Data[['LBDLDL']])**0.5 # transform the y value to y**0.5 as picked 
@@ -990,7 +993,7 @@ img <- readPNG("./kaliu python/failed picture in R markdwon/43-5.png")
  grid.raster(img)
 ```
 
-From the graphes above, we can see that LBXTR and AGE plots, there are a little inverse 'U' shape, so in the final model, we add LBXTR square and AGE square terms.
+From graphs above, we can see that in LBXTR and AGE plots, there is a little inverse 'U' shape. Thus, in the final model, we add $LBXTR^2$ and $AGE^2$ terms.
 
 ```{python}
 Data['AGE2']=Data[['AGE']]*Data[['AGE']]
@@ -1003,7 +1006,7 @@ final_vars,_=forwardSelection(x5,y5,model_type='linear',elimination_criteria='ai
 final_vars,_=backwardSelection(x5,y5,model_type='linear',elimination_criteria='aic')
 ```
 
-From AIC comparison, we select variables 'LBXTR', 'BPXSY', 'BPXDI', 'AGE', 'HEIGHT', 'WEIGHT', 'BMI', 'RACE', 'AGE2', 'LBXTR2'
+From model selection by AIC, we select variables 'LBXTR', 'BPXSY', 'BPXDI', 'AGE', 'HEIGHT', 'WEIGHT', 'BMI', 'RACE', 'AGE2', 'LBXTR2'
 
 ```{python}
 #part of race as selected, it is little strange to put part varibles in, so I put all the race varaibles in the final model, and my model may little differ from my groups
@@ -1035,17 +1038,6 @@ library(gridExtra)
 ## 80: --------------------------------------------------------------------------------
 
 ```
-
-### Linear mixed model
-
-```{r}
-## Before graphing, we will have the linear mixed model upon the dataset:
-LM=lmer(ldl~age+intake_fat+intake_chol+systolic+diastolic+
-          weight+height+bmi+triglycerides+(1|gender)+(1|race),data=DT)
-summary(LM)
-```
-  
-   According to the fitting result, the age, intake_fat, diastolic, weight and triglycerides are positively correlated, while the others are negatively correlated; the t-values of triglycerides, diastolic and age are really large, shows that they are important variables to this model. However, according to the random effects, the variance for race is 0.695, for gender is 0, and for residual is 1111.545, implies that the linear mixed model may not work really well.
 
 
 ### Graphing
@@ -1117,7 +1109,18 @@ mean_race=ggplot(MR,aes(x=race,y=mean_ldl))+geom_point(shape=16,col='red')+
 grid.arrange(gend,race,mean_gend,mean_race,nrow=2)
 ```
 
-  Here we plot the residual plots and the QQ-plots, and the result shows that the regression models satisfy the assumptions of the OLS model. By the way, we plot the relationships between ldl and gender and race, and the plots shows that the ldl level of male is slightly higher than female from the whole, and the levels for female are more centerized. For race, the ldl level of Other Race is the highest from the whole, and Non-Hispanic Black is the lowest.
+Here we plot residual plots and QQ-plots, and the result shows that the fitted model satisfies assumptions for the OLS model. In addition, we plot relationships between ldl and gender and race, and plots show that the ldl level of males is slightly higher than females, when fixing other variables. For race, the ldl level of Other Race is the highest from the whole, and for Non-Hispanic Black is the lowest.
+
+### Linear mixed model
+
+```{r}
+## Before graphing, we will have the linear mixed model upon the dataset:
+LM=lmer(ldl~age+intake_fat+intake_chol+systolic+diastolic+
+          weight+height+bmi+triglycerides+(1|gender)+(1|race),data=DT)
+summary(LM)
+```
+  
+Addutionally, I fitted a mixed effect model, having gender and race as random intercepts. The amount of variation explained by these two effects is roughly 0.006%, implying that the linear mixed model doesn't work well.
 
 ## Stata
 I am interested in exploring the specific relationship between the level of triglyceride and the response varaiable $\sqrt{ldl}$. In partcular, does the relationship varies with the specific quantile of triglyceride? I used quantile regression to find the answer. 
@@ -1130,35 +1133,35 @@ qreg ldl2 triglyceride, quantile(0.75)
 qreg ldl2 triglyceride, quantile(0.90)
 ```
 
-```{r fig.width=5, fig.height=1,echo=FALSE, fig.align='center'}
+```{r fig.width=7, fig.height=2,echo=FALSE, fig.align='center'}
 library(png)
 library(grid)
 img <- readPNG("./Xiru Lyu/Results/5.png")
  grid.raster(img)
 ```
 
-```{r fig.width=5, fig.height=1,echo=FALSE, fig.align='center'}
+```{r fig.width=7, fig.height=2,echo=FALSE, fig.align='center'}
 library(png)
 library(grid)
 img <- readPNG("./Xiru Lyu/Results/25.png")
  grid.raster(img)
 ```
 
-```{r fig.width=5, fig.height=1,echo=FALSE, fig.align='center'}
+```{r fig.width=7, fig.height=2,echo=FALSE, fig.align='center'}
 library(png)
 library(grid)
 img <- readPNG("./Xiru Lyu/Results/50.png")
  grid.raster(img)
 ```
 
-```{r fig.width=5, fig.height=1,echo=FALSE, fig.align='center'}
+```{r fig.width=7, fig.height=2,echo=FALSE, fig.align='center'}
 library(png)
 library(grid)
 img <- readPNG("./Xiru Lyu/Results/75.png")
  grid.raster(img)
 ```
 
-```{r fig.width=5, fig.height=1,echo=FALSE, fig.align='center', fig.cap="Quantile Regression Results"}
+```{r fig.width=7, fig.height=2,echo=FALSE, fig.align='center', fig.cap="Quantile Regression Results"}
 library(png)
 library(grid)
 img <- readPNG("./Xiru Lyu/Results/90.png")
@@ -1175,8 +1178,6 @@ img <- readPNG("./Xiru Lyu/Results/quantile.png")
 The quantile plot above shows that the level of triglyceride has positive correlation with the $\sqrt{ldl}$ and the relationship between the two doesn't vary much by quantile. Also, note that the quantile plot is generated with R and a detailed script is located under the folder /Xiru Lyu/quantile.R.
 
 ## Python
-
-### Additional analysis
 
 ```{python}
 # additional analysis
@@ -1200,7 +1201,7 @@ ols = dict(a = ols.params['Intercept'],
            upper_b = ols_ci[1])  #CI for b, upbound
 
 print(models)
-print(ols)
+
 #plot quantile fig line by line
 x = np.arange(Data.AGE.min(), Data.AGE.max()+1, 1)
 get_y = lambda a, b: a + b * x
@@ -1238,6 +1239,9 @@ ax.set_ylabel('LDL(sqrt_LDL)', fontsize=16);
 plt.show()
 ```
 
+I would like to see if there is any specific relationship between the level of LDL and age. As demonstrated by the plot of the quantile regression, regression lines for different quantiles are roughly parallel, suggesting that the variance of the response variable is constant across values of age.
+
+
 # Discussion
 
 All of the three tools above use the stepwise model selection technique to choose the best fitted model, but there are some differences existing among these tools.
@@ -1246,9 +1250,4 @@ For the tool using `data.table` in R, the model selection function is just as `s
 
 # Results
 
-From the analysis before, we can get the following results. From the predictors given, the `age`, `systolic`, `diastolic`, `weight`, `height`, `bmi`, `triglycerides`, $triglycerides^2$, $age^2$ are the significant predictors taht effect the level of `ldl`; the `age`, `systolic`, `diastolic`,`weight` and `triglycerides` predictors have the positive effect, and `height` and `bmi` have the negative effect. For `triglycerides` and `age`, with the predictors increase, the level of $\sqrt{ldl}$ with increase slower and slower, because the coefficient of $triglycerides^2$ and $age^2$ are negative.
-
-
-
-
-
+To conclude, age, systolic, diastolic, weight, height, bmi, triglycerides, $triglyceride^2$, $age^2$ are significant predictors that affect the level of ldl. Specifically, age, systolic, diastolic,weight and triglycerides have positive correlations with the response, while height and bmi have negative relationships. For triglyceride and age, as they increase, the rate of increase for $\sqrt{ldl}$ becomes slowly.

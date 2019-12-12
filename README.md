@@ -1,6 +1,6 @@
 # STATS 506 Project -- Group 4
 
-The goal of this project is to explore factors that can affect the level of LDL in a human body, and the result is intended to help readers gain insights on how to balance the level of LDL in order to control/prevent cardiovascular diseases. It is shown that age, weight, height, BMI, systolic and diastolic blood pressures, and the level of triglyceride are all factors that can explain the variation in the level of LDl. 
+The goal of this project is to explore factors that can affect the level of LDL in a human body, and the result is intended to help readers gain insights on how to balance the level of LDL in order to control/prevent cardiovascular diseases. It is shown that age, weight, height, BMI, systolic and diastolic blood pressures, and the level of triglyceride are all factors that can explain the variation in the level of LDL. 
 
 ## Outline
 
