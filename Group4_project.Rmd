@@ -374,6 +374,8 @@ img <- readPNG("./Xiru Lyu/Results/full_1.png")
  grid.raster(img)
 ```
 
+I first fitted the full model, including all possible covariates and the transformed dependent variable, and then I used forward and backward stepwise selections for model selections. To be consistent with the result produced by R, I used the result from the backward selection for later AIC/BIC comparison. 
+
 ```{stata, eval = FALSE}
 * backward selection
 xi: stepwise, pr(.1): regress ldl2 age i.race i.gender bmi weight height ///
@@ -400,9 +402,6 @@ img <- readPNG("./Xiru Lyu/Results/forward_1.png")
  grid.raster(img)
 ```
 
-To be consistent with the model selection result performed in R (reasons to be discussed)
-
-
 ```{stata, eval = FALSE}
 * transform covariates
 generate triglyceride2 = triglyceride^2
@@ -412,6 +411,8 @@ generate age2 = age^2
 regress ldl2 age age2 i.race i.gender bmi weight height diastolic systolic ///
 chol fat triglyceride triglyceride2
 ```
+
+I then fitted another model that contains two extra transformed independent variables. With the stepwise model selection procedure, I kept the model selected by the backward selection as the one for further AIC/BIC comparison so that my result is consistent with the result produced by R. 
 
 ```{r fig.width=5, fig.height=6,echo=FALSE, fig.align='center', fig.cap='Regression Result of Full Model (3)'}
 library(png)
@@ -471,6 +472,10 @@ library(grid)
 img <- readPNG("./Xiru Lyu/Results/AIC_2.png")
  grid.raster(img)
 ```
+
+A comparison for AIC/BIC for two nested models shows that the model $\mathbf{\sqrt{LDL}}$ ~ $\mathbf{age + age^2 + height + weight + BMI + triglyceride + triglyceride^2 + diastolic + systolic}$ is a better one. Inferential statistics for the model is produced below. Covariates age, triglyceride, weight, diastolic and systolic blood pressures are positively correlated with the level of LDL, while **\{age^2}**, **\{triglyceride^2}** and **BMI** are negatively correlated with the response variable.
+
+Specifically, with other variables fixed, one year increase in age leads to approximately 0.10 unit of increase in $\sqrt{ldl}$. Also, the rate of increase for the level of $\sqrt{ldl}$ slows down as one ages. One unit of increase in diastolic blood pressure can increase $\sqrt{ldl}$ by 0.006 unit. One unit of increase in systolic blood pressure can increase $\sqrt{ldl}$ by 0.004 unit. One unit of increase in BMI decreases $\sqrt{ldl}$ by 0.075 unit. One unit of increase in weight and triglyceride can bump up $\sqrt{ldl}$ by .026 and .021 unit, respectively. Finally, one unit increase in height leads to approximately 0.026 unit of decrease in $\sqrt{ldl}$. 
 
 ## Python
 
@@ -1090,6 +1095,7 @@ grid.arrange(gend,race,mean_gend,mean_race,nrow=2)
 ```
 
 ## Stata
+I am interested in exploring the specific relationship between the level of triglyceride and the response varaiable $\sqrt{ldl}$. In partcular, does the relationship varies with the specific quantile of triglyceride? I used quantile regression to find the answer. 
 
 ```{stata, eval = FALSE}
 qreg ldl2 triglyceride, quantile(0.05)
@@ -1099,7 +1105,49 @@ qreg ldl2 triglyceride, quantile(0.75)
 qreg ldl2 triglyceride, quantile(0.90)
 ```
 
-(attach the plot here?)
+```{r fig.width=5, fig.height=1,echo=FALSE, fig.align='center'}
+library(png)
+library(grid)
+img <- readPNG("./Xiru Lyu/Results/5.png")
+ grid.raster(img)
+```
+
+```{r fig.width=5, fig.height=1,echo=FALSE, fig.align='center'}
+library(png)
+library(grid)
+img <- readPNG("./Xiru Lyu/Results/25.png")
+ grid.raster(img)
+```
+
+```{r fig.width=5, fig.height=1,echo=FALSE, fig.align='center'}
+library(png)
+library(grid)
+img <- readPNG("./Xiru Lyu/Results/50.png")
+ grid.raster(img)
+```
+
+```{r fig.width=5, fig.height=1,echo=FALSE, fig.align='center'}
+library(png)
+library(grid)
+img <- readPNG("./Xiru Lyu/Results/75.png")
+ grid.raster(img)
+```
+
+```{r fig.width=5, fig.height=1,echo=FALSE, fig.align='center', fig.cap="Quantile Regression Results"}
+library(png)
+library(grid)
+img <- readPNG("./Xiru Lyu/Results/90.png")
+ grid.raster(img)
+```
+
+```{r fig.width=5, fig.height=5,echo=FALSE, fig.align='center', fig.cap="Quantile Regression Plot"}
+library(png)
+library(grid)
+img <- readPNG("./Xiru Lyu/Results/quantile.png")
+ grid.raster(img)
+```
+
+The quantile plot above shows that the level of triglyceride has positive correlation with the $\sqrt{ldl}$ and the relationship between the two doesn't vary much by quantile. Also, note that the quantile plot is generated with R and a detailed script is located under the folder /Xiru Lyu/quantile.R.
 
 ## Python
 
@@ -1157,21 +1205,11 @@ img <- readPNG("./kaliu python/failed picture in R markdwon/49.png")
 
 # Discussion
 
-All of the three tools above use the model selection upon linear regression model, but some difference exist between these three tools.
+All of the three tools above use the stepwise model selection technique to choose the best fitted model, but there are some differences existing among these tools.
 
-For the tool using `data.table` in R, the model selection function is just as `step(,direction='')`, and the direction choose is `both`; note that the selection criterion is by AIC. For the tool using Stata, the model selection command is using `stepwise`; the criterion is using the p-values (here the p-value standards are set at 0.05), and both the backward selection and forward selection are considered; by the way, the Stata tool also compare the AIC and BIC between the two nested models using model selection. For Python, the code for backward and forward selections are downloaded from the given github site, and the criteria choose is AIC. Because some difference upon model selection exists between the three tools, the final regression results may be different from each other.
-
-As for the additional analysis, the R tool chooses the linear mixed model, and draw some plots of the features of the regression models, as well as the relationship between `ldl` and `age` and `gender`. As for Stata and Python tools, they choose the quantile regression as the additional method; for Stata, the variables choose are `ldl` and `triglycerides`, and for Python, the variable choose is `age`.
+For the tool using `data.table` in R, the model selection function is just as `step(,direction='')`, and the direction choose is `both`; note that the selection criterion is by AIC. For Stata, the model selection technique is performed using `stepwise`, and the selection criterion is based on p-values. As Stata cannot perform the stepwise selection in both directions, separate forward and backward selections are performed, and p-values are tuned so that model selection results match those by R. For Python, the code for backward and forward selections are downloaded from the given Github site, and the selection criteria is by AIC. As the model selection technique differs for Python in selecting categorical variables of multiple levels, the final regression results by Python are slightly different from those by R and Stata.
 
 # Results
-
-## Stata
-
-Stepwise variable selection for our first full model, where sqrt transformation is only applied to the dependent variable, shows that a model with age, diastolic blood pressure, triglycerides, height and weight as independent variables best fits the data. Results show that height is negatively correlated with the fitted level of LDL, while other covariates are positively related. 
-
-Specifically, with other variables fixed, one year increase in age leads to approximately 0.008 unit of increase in $\sqrt{ldl}$. One unit of increase in diastolic blood pressure can increase $\sqrt{ldl}$ by 0.02 unit. One unit of increase in weight and triglycerides can bump up $\sqrt{ldl}$ by .005 and .006 unit, respectively. Finally, one unit increase in height leads to approximately 0.008 unit of decrease in $\sqrt{ldl}$. Overall, higher levels of age, diastolic blood pressure, weight, and/or triglycerides can cause higher risks of cardiovascular diseases.
-
-Stepwise variable selection for our second full model, where sqrt transformation is applied to the dependent variable, and $triglycerides^2$ and $age^2$ are included as additional independent variables, shows that a model with age, $age^2$, triglycerides, $triglycerides^2$, diastolic blood pressure, systolic blood pressure, height, weight and bmi as independent variables best fits the data. It is shown that $age^2$, height and $trig^2$ and bmi are negatively related to the fitted level of LDL, while all other covariates are positively correlated. 
 
 ## R
 
