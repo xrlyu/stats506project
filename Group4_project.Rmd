@@ -474,6 +474,479 @@ img <- readPNG("./Xiru Lyu/Results/AIC_2.png")
 
 ## Python
 
+```{r include=FALSE}
+library(reticulate)
+use_virtualenv(virtualenv = "r-reticulate")
+use_python("/Users/lihuayu/anaconda3/bin/python")
+```
+
+### Data Cleaning
+
+```{python}
+import pandas as pd
+import numpy as np
+LDLdata=pd.read_sas(r'./Original Data/TRIGLY_I.XPT',encoding='utf8')
+DR1=pd.read_sas(r'./Original Data/DR1TOT_I.XPT',encoding='utf8')
+DR2=pd.read_sas(r'./Original Data/DR2TOT_I.XPT',encoding='utf8')
+BPX=pd.read_sas(r'./Original Data/BPX_I.XPT',encoding='utf8')
+DEMO=pd.read_sas(r'./Original Data/DEMO_I.XPT',encoding='utf8')
+BMI=pd.read_sas(r'./Original Data/BMX_I.XPT',encoding='utf8')
+
+LDL=LDLdata[['SEQN','LBXTR', 'LBDLDL']]
+#WTSAF2YR:MEC weight
+#LBXTR: triglyceride(mg/dl)
+#LBDLDL:  LDL mg/dl
+
+BloodP=BPX[['SEQN']]
+BloodP['BPXSY']=np.nanmean(BPX[['BPXSY1','BPXSY2','BPXSY3','BPXSY4']],axis=1)
+BloodP['BPXDI']=np.nanmean(BPX[['BPXDI1','BPXDI2','BPXDI3','BPXDI4']],axis=1)
+BloodP
+
+drday1=DR1[['SEQN','DR1TTFAT','DR1TCHOL']]
+drday2=DR2[['SEQN','DR2TTFAT','DR2TCHOL']]
+drboth=pd.merge(drday1,drday2,how='inner',on='SEQN')
+drboth['FAT']=np.nanmean(drboth[['DR1TTFAT','DR2TTFAT']],axis=1)
+drboth['CHOL']=np.nanmean(drboth[['DR1TCHOL','DR2TCHOL']],axis=1)
+dr=drboth[['SEQN','FAT','CHOL']]
+demo=DEMO[['SEQN','RIAGENDR','RIDAGEYR','RIDRETH3']]
+#ID,GENDER,AGE,RACE(FACTOR)
+demo.rename(columns={'RIAGENDR':'GENDER','RIDAGEYR':'AGE','RIDRETH3':'RACE'},inplace=True)
+BMI=BMI[['SEQN','BMXHT','BMXWT','BMXBMI']]
+#ID,HEIGHT,WEIGHT
+BMI.columns=['SEQN','HEIGHT','WEIGHT','BMI']
+Data=pd.merge(LDL,BloodP,how='inner',on='SEQN')
+Data=pd.merge(Data,dr,how='inner',on='SEQN')
+Data=pd.merge(Data,demo,how='inner',on='SEQN')
+Data=pd.merge(Data,BMI,how='inner',on='SEQN')
+
+Data=Data.dropna(axis=0)
+Data.columns
+
+Data.to_csv(r'./kaliu python/Data1.csv',index=None)
+```
+
+### Modeling
+
+```{python}
+import pandas as pd
+import numpy as np
+from sklearn import linear_model
+from scipy import stats
+import statsmodels.formula.api as smf
+import matplotlib.pyplot as plt
+import pylab
+import statsmodels.api as sm
+
+## code from github, link  https://github.com/talhahascelik/python_stepwiseSelection/blob/master/stepwiseSelection.py
+
+#Copyright 2019 Sinan Talha Hascelik
+#
+#Licensed under the Apache License, Version 2.0 (the "License");
+#you may not use this file except in compliance with the License.
+#You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+#Unless required by applicable law or agreed to in writing, software
+#distributed under the License is distributed on an "AS IS" BASIS,
+#WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#See the License for the specific language governing permissions and
+#limitations under the License.
+
+
+def forwardSelection(X, y, model_type ="linear",elimination_criteria = "aic", varchar_process = "dummy_dropfirst", sl=0.05):
+    """
+    Forward Selection is a function, based on regression models, that returns significant features and selection iterations.\n
+    Required Libraries: pandas, numpy, statmodels
+    
+    Parameters
+    ----------
+    X : Independent variables (Pandas Dataframe)\n
+    y : Dependent variable (Pandas Series, Pandas Dataframe)\n
+    model_type : 'linear' or 'logistic'\n
+    elimination_criteria : 'aic', 'bic', 'r2', 'adjr2' or None\n
+        'aic' refers Akaike information criterion\n
+        'bic' refers Bayesian information criterion\n
+        'r2' refers R-squared (Only works on linear model type)\n
+        'r2' refers Adjusted R-squared (Only works on linear model type)\n
+    varchar_process : 'drop', 'dummy' or 'dummy_dropfirst'\n
+        'drop' drops varchar features\n
+        'dummy' creates dummies for all levels of all varchars\n
+        'dummy_dropfirst' creates dummies for all levels of all varchars, and drops first levels\n
+    sl : Significance Level (default: 0.05)\n
+    
+    Returns
+    -------
+    columns(list), iteration_logs(str)\n\n
+    Not Returns a Model
+    
+    Tested On
+    ---------
+    Python v3.6.7, Pandas v0.23.4, Numpy v1.15.04, StatModels v0.9.0
+    
+    See Also
+    --------
+    https://en.wikipedia.org/wiki/Stepwise_regression
+    """
+    X = __varcharProcessing__(X,varchar_process = varchar_process)
+    return __forwardSelectionRaw__(X, y, model_type = model_type,elimination_criteria = elimination_criteria , sl=sl)
+    
+def backwardSelection(X, y, model_type ="linear",elimination_criteria = "aic", varchar_process = "dummy_dropfirst", sl=0.05):
+    """
+    Backward Selection is a function, based on regression models, that returns significant features and selection iterations.\n
+    Required Libraries: pandas, numpy, statmodels
+    
+    Parameters
+    ----------
+    X : Independent variables (Pandas Dataframe)\n
+    y : Dependent variable (Pandas Series, Pandas Dataframe)\n
+    model_type : 'linear' or 'logistic'\n
+    elimination_criteria : 'aic', 'bic', 'r2', 'adjr2' or None\n
+        'aic' refers Akaike information criterion\n
+        'bic' refers Bayesian information criterion\n
+        'r2' refers R-squared (Only works on linear model type)\n
+        'r2' refers Adjusted R-squared (Only works on linear model type)\n
+    varchar_process : 'drop', 'dummy' or 'dummy_dropfirst'\n
+        'drop' drops varchar features\n
+        'dummy' creates dummies for all levels of all varchars\n
+        'dummy_dropfirst' creates dummies for all levels of all varchars, and drops first levels\n
+    sl : Significance Level (default: 0.05)\n
+    
+    Returns
+    -------
+    columns(list), iteration_logs(str)\n\n
+    Not Returns a Model
+    
+    Tested On
+    ---------
+    Python v3.6.7, Pandas v0.23.4, Numpy v1.15.04, StatModels v0.9.0
+    
+    See Also
+    --------
+    https://en.wikipedia.org/wiki/Stepwise_regression    
+    """
+    X = __varcharProcessing__(X,varchar_process = varchar_process)
+    return __backwardSelectionRaw__(X, y, model_type = model_type,elimination_criteria = elimination_criteria , sl=sl)
+
+def __varcharProcessing__(X, varchar_process = "dummy_dropfirst"):
+    
+    dtypes = X.dtypes
+    if varchar_process == "drop":   
+        X = X.drop(columns = dtypes[dtypes == np.object].index.tolist())
+        print("Character Variables (Dropped):", dtypes[dtypes == np.object].index.tolist())
+    elif varchar_process == "dummy":
+        X = pd.get_dummies(X,drop_first=False)
+        print("Character Variables (Dummies Generated):", dtypes[dtypes == np.object].index.tolist())
+    elif varchar_process == "dummy_dropfirst":
+        X = pd.get_dummies(X,drop_first=True)
+        print("Character Variables (Dummies Generated, First Dummies Dropped):", dtypes[dtypes == np.object].index.tolist())
+    else: 
+        X = pd.get_dummies(X,drop_first=True)
+        print("Character Variables (Dummies Generated, First Dummies Dropped):", dtypes[dtypes == np.object].index.tolist())
+    
+    X["intercept"] = 1
+    cols = X.columns.tolist()
+    cols = cols[-1:] + cols[:-1]
+    X = X[cols]
+    
+    return X
+
+def __forwardSelectionRaw__(X, y, model_type ="linear",elimination_criteria = "aic", sl=0.05):
+
+    iterations_log = ""
+    cols = X.columns.tolist()
+    
+    def regressor(y,X, model_type=model_type):
+        if model_type == "linear":
+            regressor = sm.OLS(y, X).fit()
+        elif model_type == "logistic":
+            regressor = sm.Logit(y, X).fit()
+        else:
+            print("\nWrong Model Type : "+ model_type +"\nLinear model type is seleted.")
+            model_type = "linear"
+            regressor = sm.OLS(y, X).fit()
+        return regressor
+    
+    selected_cols = ["intercept"]
+    other_cols = cols.copy()
+    other_cols.remove("intercept")
+    
+    model = regressor(y, X[selected_cols])
+    
+    if elimination_criteria == "aic":
+        criteria = model.aic
+    elif elimination_criteria == "bic":
+        criteria = model.bic
+    elif elimination_criteria == "r2" and model_type =="linear":
+        criteria = model.rsquared
+    elif elimination_criteria == "adjr2" and model_type =="linear":
+        criteria = model.rsquared_adj
+    
+    
+    for i in range(X.shape[1]):
+        pvals = pd.DataFrame(columns = ["Cols","Pval"])
+        for j in other_cols:
+            model = regressor(y, X[selected_cols+[j]])
+            pvals = pvals.append(pd.DataFrame([[j, model.pvalues[j]]],columns = ["Cols","Pval"]),ignore_index=True)
+        pvals = pvals.sort_values(by = ["Pval"]).reset_index(drop=True)
+        pvals = pvals[pvals.Pval<=sl]
+        if pvals.shape[0] > 0:
+            
+            model = regressor(y, X[selected_cols+[pvals["Cols"][0]]])
+            iterations_log += str("\nEntered : "+pvals["Cols"][0] + "\n")    
+            iterations_log += "\n\n"+str(model.summary())+"\nAIC: "+ str(model.aic) + "\nBIC: "+ str(model.bic)+"\n\n"
+                    
+        
+            if  elimination_criteria == "aic":
+                new_criteria = model.aic
+                if new_criteria < criteria:
+                    print("Entered :", pvals["Cols"][0], "\tAIC :", model.aic)
+                    selected_cols.append(pvals["Cols"][0])
+                    other_cols.remove(pvals["Cols"][0])
+                    criteria = new_criteria
+                else:
+                    print("break : Criteria")
+                    break
+            elif  elimination_criteria == "bic":
+                new_criteria = model.bic
+                if new_criteria < criteria:
+                    print("Entered :", pvals["Cols"][0], "\tBIC :", model.bic)
+                    selected_cols.append(pvals["Cols"][0])
+                    other_cols.remove(pvals["Cols"][0])
+                    criteria = new_criteria
+                else:
+                    print("break : Criteria")
+                    break        
+            elif  elimination_criteria == "r2" and model_type =="linear":
+                new_criteria = model.rsquared
+                if new_criteria > criteria:
+                    print("Entered :", pvals["Cols"][0], "\tR2 :", model.rsquared)
+                    selected_cols.append(pvals["Cols"][0])
+                    other_cols.remove(pvals["Cols"][0])
+                    criteria = new_criteria
+                else:
+                    print("break : Criteria")
+                    break           
+            elif  elimination_criteria == "adjr2" and model_type =="linear":
+                new_criteria = model.rsquared_adj
+                if new_criteria > criteria:
+                    print("Entered :", pvals["Cols"][0], "\tAdjR2 :", model.rsquared_adj)
+                    selected_cols.append(pvals["Cols"][0])
+                    other_cols.remove(pvals["Cols"][0])
+                    criteria = new_criteria
+                else:
+                    print("Break : Criteria")
+                    break
+            else:
+                print("Entered :", pvals["Cols"][0])
+                selected_cols.append(pvals["Cols"][0])
+                other_cols.remove(pvals["Cols"][0])            
+                
+        else:
+            print("Break : Significance Level")
+            break
+        
+    model = regressor(y, X[selected_cols])
+    if elimination_criteria == "aic":
+        criteria = model.aic
+    elif elimination_criteria == "bic":
+        criteria = model.bic
+    elif elimination_criteria == "r2" and model_type =="linear":
+        criteria = model.rsquared
+    elif elimination_criteria == "adjr2" and model_type =="linear":
+        criteria = model.rsquared_adj
+    
+    print(model.summary())
+    print("AIC: "+str(model.aic))
+    print("BIC: "+str(model.bic))
+    print("Final Variables:", selected_cols)
+
+    return selected_cols, iterations_log
+
+def __backwardSelectionRaw__(X, y, model_type ="linear",elimination_criteria = "aic", sl=0.05):
+    
+    iterations_log = ""
+    last_eleminated = ""    
+    cols = X.columns.tolist()
+
+    def regressor(y,X, model_type=model_type):
+        if model_type =="linear":
+            regressor = sm.OLS(y, X).fit()
+        elif model_type == "logistic":
+            regressor = sm.Logit(y, X).fit()
+        else:
+            print("\nWrong Model Type : "+ model_type +"\nLinear model type is seleted.")
+            model_type = "linear"
+            regressor = sm.OLS(y, X).fit()
+        return regressor
+    for i in range(X.shape[1]):
+        if i != 0 :          
+            if elimination_criteria == "aic":
+                criteria = model.aic
+                new_model = regressor(y,X)
+                new_criteria = new_model.aic
+                if criteria < new_criteria:
+                    print("Regained : ", last_eleminated)
+                    iterations_log += "\n"+str(new_model.summary())+"\nAIC: "+ str(new_model.aic) + "\nBIC: "+ str(new_model.bic)+"\n"
+                    iterations_log += str("\n\nRegained : "+last_eleminated + "\n\n")
+                    break  
+            elif elimination_criteria == "bic":
+                criteria = model.bic
+                new_model = regressor(y,X)
+                new_criteria = new_model.bic
+                if criteria < new_criteria:
+                    print("Regained : ", last_eleminated)
+                    iterations_log += "\n"+str(new_model.summary())+"\nAIC: "+ str(new_model.aic) + "\nBIC: "+ str(new_model.bic)+"\n"
+                    iterations_log += str("\n\nRegained : "+last_eleminated + "\n\n")
+                    break  
+            elif elimination_criteria == "adjr2" and model_type =="linear":
+                criteria = model.rsquared_adj
+                new_model = regressor(y,X)
+                new_criteria = new_model.rsquared_adj
+                if criteria > new_criteria:
+                    print("Regained : ", last_eleminated)
+                    iterations_log += "\n"+str(new_model.summary())+"\nAIC: "+ str(new_model.aic) + "\nBIC: "+ str(new_model.bic)+"\n"
+                    iterations_log += str("\n\nRegained : "+last_eleminated + "\n\n")
+                    break  
+            elif elimination_criteria == "r2" and model_type =="linear":
+                criteria = model.rsquared
+                new_model = regressor(y,X)
+                new_criteria = new_model.rsquared
+                if criteria > new_criteria:
+                    print("Regained : ", last_eleminated)
+                    iterations_log += "\n"+str(new_model.summary())+"\nAIC: "+ str(new_model.aic) + "\nBIC: "+ str(new_model.bic)+"\n"
+                    iterations_log += str("\n\nRegained : "+last_eleminated + "\n\n")
+                    break   
+            else: 
+                new_model = regressor(y,X)
+            model = new_model
+            iterations_log += "\n"+str(model.summary())+"\nAIC: "+ str(model.aic) + "\nBIC: "+ str(model.bic)+"\n"
+        else:
+            model = regressor(y,X)
+            iterations_log += "\n"+str(model.summary())+"\nAIC: "+ str(model.aic) + "\nBIC: "+ str(model.bic)+"\n"
+        maxPval = max(model.pvalues)
+        cols = X.columns.tolist()
+        if maxPval > sl:
+            for j in cols:
+                if (model.pvalues[j] == maxPval):
+                    print("Eliminated :" ,j)
+                    iterations_log += str("\n\nEliminated : "+j+ "\n\n")
+                    
+                    del X[j]
+                    last_eleminated = j
+        else:
+            break
+    print(str(model.summary())+"\nAIC: "+ str(model.aic) + "\nBIC: "+ str(model.bic))
+    print("Final Variables:", cols)
+    iterations_log += "\n"+str(model.summary())+"\nAIC: "+ str(model.aic) + "\nBIC: "+ str(model.bic)+"\n"
+    return cols, iterations_log
+    
+Data=pd.read_csv(r'./kaliu python/Data1.csv')
+Data=Data.drop(['SEQN'],axis=1)#drop the id variable 'SEQN' 
+
+RACE=pd.get_dummies(Data['RACE'])
+RACENAME=['Mexican American','Other Hispanic','Non-Hispanic White','Non-Hispanic Black','Non-Hispanic Asian','Other Race']
+RACE.columns=[ i for i in RACENAME]
+RACE=RACE.drop(['Mexican American'],axis=1)
+
+GENDER=pd.get_dummies(Data['GENDER'])
+gendername=['Male','Female']
+GENDER.columns=[i for i in gendername]
+GENDER=GENDER.drop(['Male'],axis=1)
+
+Data=Data.drop(['GENDER','RACE'],axis=1)
+Data=pd.concat([Data,GENDER,RACE],axis=1)
+
+y1=Data[['LBDLDL']]       ## lm reg, the response= LBDLDL (LDL)
+x1=Data.drop(['LBDLDL'],axis=1) # others except LDL are the variables
+x1=sm.add_constant(x1)     ## add intercept, for python, add 1 colunms by hand
+
+lm1=sm.OLS(y1.astype(float),x1.astype(float)).fit() # OLS y on X+1
+
+lm1.summary()     # coefficient table
+
+```
+
+From result, many coefficient are not significant, so to better select variables, we are going to see the resdisual condition and use boxcox to help.
+
+```{python}
+res1=lm1.resid
+y1_fit=lm1.predict(x1)
+fig1=plt.figure(figsize=(8,6))
+plt.plot(y1_fit,res1,'o''c') #'0' means dots,''''means no line between dots, 'c' color
+plt.title('Residuals against Y-fited')
+plt.ylabel('Residuals')
+plt.xlabel('Y-fitted value')
+plt.show()
+
+res = lm1.resid  # residuals
+stats.probplot(res, dist="norm", plot=pylab) # QQplot, simliar to fig = sm.qqplot(res)
+pylab.show()
+```
+
+First, we plot y_fit versus residual, then we plot QQplot of residual, and we can see that the QQplot shows that the residual is not really normal.
+
+```{python}
+#boxcox
+y2=np.array(y1).flatten()
+fig2=plt.figure()
+ax = fig2.add_subplot(111)
+prob=stats.boxcox_normplot(y2,0,1,plot=ax)
+_, maxlog=stats.boxcox(y2)
+ax.axvline(maxlog,color='r')
+plt.show()
+```
+
+From the plot, we can tansform the y value to $y^\lambda$, when lambda is around 0.4, then result seems best,to make it simple we pick $\lambda=0.5$.
+
+```{python}
+Data['LDL']=(Data[['LBDLDL']])**0.5 # transform the y value to y**0.5
+Data=Data.drop(['LBDLDL'],axis=1)
+
+y3=Data[['LDL']]
+x3=Data.drop(['LDL'],axis=1)
+final_vars,_=forwardSelection(x3,y3,model_type='linear',elimination_criteria='aic')
+
+final_vars,_=backwardSelection(x3,y3,model_type='linear',elimination_criteria='aic')
+
+x4=Data[['LBXTR', 'BPXDI', 'AGE', 'HEIGHT', 'WEIGHT']]
+x4=sm.add_constant(x4)
+lm2=sm.OLS(y3.astype(float),x4.astype(float)).fit()
+for i in range(5):
+    name=x4.columns[i+1]
+    sm.graphics.plot_ccpr(lm2,name) # https://en.wikipedia.org/wiki/Partial_residual_plot  
+    #The CCPR (component and component-plus-residual) plot is a refinement of the partial residual plot
+plt.show()
+```
+
+From the graphes above, we can see that LBXTR and AGE plots, there are a little inverse 'U' shape, so in the final model, we add LBXTR square and AGE square terms.
+
+```{python}
+Data['AGE2']=Data[['AGE']]*Data[['AGE']]
+Data['LBXTR2']=Data[['LBXTR']]*Data[['LBXTR']]
+y5=Data[['LDL']]
+x5=Data.drop(['LDL'],axis=1)
+
+final_vars,_=forwardSelection(x5,y5,model_type='linear',elimination_criteria='aic')
+
+final_vars,_=backwardSelection(x5,y5,model_type='linear',elimination_criteria='aic')
+```
+
+From AIC comparison, we select variables 'LBXTR', 'BPXSY', 'BPXDI', 'AGE', 'HEIGHT', 'WEIGHT', 'BMI', 'RACE', 'AGE2', 'LBXTR2'
+
+```{python}
+y=Data[['LDL']]
+x=Data[['LBXTR', 'BPXSY', 'BPXDI', 'AGE', 'HEIGHT', 'WEIGHT', 'BMI','Other Hispanic','Non-Hispanic White','Non-Hispanic Black','Non-Hispanic Asian','Other Race', 'AGE2', 'LBXTR2']]
+#here we add all RACE types except RACE='Mexican American', which is viewed as base
+x=sm.add_constant(x)
+lm_final=sm.OLS(y.astype(float),x.astype(float)).fit()
+lm_final.summary()
+
+```
+
+
+
+
 # Additional Analysis {.tabset}
 
 ## R
@@ -581,6 +1054,53 @@ qreg ldl2 triglyceride, quantile(0.90)
 
 ## Python
 
+### Additional analysis
+
+```{python}
+# additional analysis
+#quantile regression
+mod=smf.quantreg('LDL~AGE',Data)
+quantiles = np.arange(.05, .96, .1)
+def fit_model(q):       # learned seaborn from and this function origin from https://www.cnblogs.com/caiyishuai/p/11184166.html
+    res = mod.fit(q=q)
+    return [q, res.params['Intercept'], res.params['AGE']] + \
+            res.conf_int().loc['AGE'].tolist()
+
+models = [fit_model(x) for x in quantiles]
+models = pd.DataFrame(models, columns=['q', 'a', 'b', 'lower_b', 'upper_b'])
+
+ols = smf.ols('LDL ~ AGE', Data).fit()
+ols_ci = ols.conf_int().loc['AGE'].tolist()
+ols = dict(a = ols.params['Intercept'],
+           b = ols.params['AGE'],
+           lower_b = ols_ci[0],  # Ci for b,lowerbound
+           upper_b = ols_ci[1])  #CI for b, upbound
+
+print(models)
+print(ols)
+
+x = np.arange(Data.AGE.min(), Data.AGE.max()+1, 1)
+get_y = lambda a, b: a + b * x
+
+fig, ax = plt.subplots(figsize=(8, 6))
+
+for i in range(models.shape[0]):
+    y = get_y(models.a[i], models.b[i])
+    ax.plot(x, y, linestyle='dotted', color='g')
+
+y = get_y(ols['a'], ols['b'])
+
+ax.plot(x, y, color='red', label='OLS')
+ax.scatter(Data.AGE, Data.LDL, alpha=.2)
+ax.set_xlim((10, 85))
+ax.set_ylim((3.0, 17.5))
+legend = ax.legend()
+ax.set_xlabel('AGE', fontsize=16)
+ax.set_ylabel('LDL(sqrt_LDL)', fontsize=16);
+```
+
+
+
 # Discussion
 
 # Results
@@ -604,14 +1124,6 @@ Stepwise variable selection for our second full model, where sqrt transformation
   For the linear mixed model, here we will use the package lme4 to analysis. According to the fitting result, the age, intake_fat, diastolic, weight and triglycerides are positively correlated, while the others are negatively correlated; the t-values of triglycerides, diastolic and age are really large, shows that they are important variables to this model. However, according to the random effects, the variance for race is 0.695, for gender is 0, and for residual is 1111.545, implies that the linear mixed model may not work really well.
   
   For the additional analysis, we plot the residual plots and the QQ-plots, and the result shows that the regression models satisfy the assumptions of the OLS model. By the way, we plot the relationships between ldl and gender and race, and the plots shows that the ldl level of male is slightly higher than female from the whole, and the levels for female are more centerized. For race, the ldl level of Other Race is the highest from the whole, and Non-Hispanic Black is the lowest.
-  
-  
-  
-  
-  
-  
-  
-
 
 ## Python
 
