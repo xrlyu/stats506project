@@ -2,7 +2,7 @@ library(quantreg)
 library(tidyverse)
 library(ggplot2)
 
-data <- readRDS("./Cleaning/final.rds")
+data <- readRDS("./Xiru Lyu/Cleaning/final.rds")
 
 tau <- c(0.05, 0.25, 0.5, .75, 0.9)
 
