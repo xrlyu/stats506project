@@ -10,7 +10,7 @@ Here is our outline of this project:
 
 (1) Data cleaning: including the process of choosing proper variables, merging datasets, reshaping the datasets, and deleting missing values.
 
-(2) Model construction: building up the model using linear regression, proper variables transformation (modifying the response `ldl` and adding square items), and model selection upon the linear models.
+(2) Model construction: building up the model using linear regression, proper variables transformation (modifying the response `ldl` as $\sqrt{ldl}$ and adding square items), and model selection upon the linear models.
 
 (3) Additional analysis: producing some additional plots, using quantile regression upon `ldl` and another variable.
 
