@@ -1,6 +1,18 @@
+# STATS 506, FALL 2019
+# 
+# Cleaning.R
+#
+# This file cleans datasets using tidyverse, as a preparation for quantile regression plot.
+#
+# Author: Xiru Lyu, xlyu@umich.edu
+#
+# Last Updated: Dec 11, 2019
+
+# Load required packages
 library(foreign)
 library(tidyverse)
 
+# Import datasets
 demo <- read.xport("./Original Data/DEMO_I.XPT.txt")
 diet1 <- read.xport("./Original Data/DR1TOT_I.XPT.txt")
 diet2 <- read.xport("./Original Data/DR2TOT_I.XPT.txt")
@@ -8,6 +20,7 @@ bp <- read.xport("./Original Data/BPX_I.XPT.txt")
 ldl <- read.xport("./Original Data/TRIGLY_I.XPT.txt")
 bm <- read.xport("./Original Data/BMX_I.XPT.txt")
 
+# Rename variables for the demographic data
 demo <- demo %>% select(SEQN, RIAGENDR, RIDAGEYR, RIDRETH3) %>% 
   rename(seqn = SEQN, gender = RIAGENDR, age = RIDAGEYR, race = RIDRETH3) %>% 
   mutate(gender = as.factor(gender)) %>% 
@@ -15,6 +28,7 @@ demo <- demo %>% select(SEQN, RIAGENDR, RIDAGEYR, RIDRETH3) %>%
 
 # saveRDS(demo, "./Cleaning/demo.rds")
 
+# Modify the dietary intake data
 diet1 <- diet1 %>% select(SEQN, DR1TTFAT, DR1TCHOL) %>% 
   rename(fat1 = DR1TTFAT, chol1 = DR1TCHOL, seqn = SEQN)
 
@@ -24,6 +38,7 @@ diet2 <- diet2 %>% select(SEQN, DR2TTFAT, DR2TCHOL) %>%
 # saveRDS(diet1, "./Cleaning/diet1.rds")
 # saveRDS(diet1, "./Cleaning/diet2.rds")
 
+# Modify the blood pressure data
 bp <- bp %>% select(SEQN, BPXSY1, BPXSY2, BPXSY3, BPXSY4, 
                     BPXDI1, BPXDI2, BPXDI3, BPXDI4) %>% 
   rename(sy1 = BPXSY1, sy2 = BPXSY2, sy3 = BPXSY3, sy4 = BPXSY4,
@@ -37,18 +52,19 @@ bp <- bp %>% select(SEQN, BPXSY1, BPXSY2, BPXSY3, BPXSY4,
 
 # saveRDS(bp, "./Cleaning/bp.rds")
 
+# Select variables relevant to the level of ldl and triglyceride
 ldl <- ldl %>% select(SEQN, LBDLDL, LBXTR) %>% 
   rename(ldl = LBDLDL, trig = LBXTR, seqn = SEQN)
 
 # saveRDS(ldl, "./Cleaning/ldl.rds")
 
+# Select variables related to body measures
 bm <- bm %>% select(SEQN, BMXWT, BMXHT, BMXBMI) %>% 
   rename(seqn = SEQN, weight = BMXWT, height = BMXHT, bmi = BMXBMI)
 
 # saveRDS(bm, "./Cleaning/bm.rds")
 
-## merge datasets
-
+# Merge datasets
 final <- inner_join(demo, bp, by = "seqn") %>% 
   inner_join(., ldl, by = "seqn") %>% 
   inner_join(., diet1, by = "seqn") %>% 
@@ -60,4 +76,5 @@ final <- inner_join(demo, bp, by = "seqn") %>%
   arrange(seqn) %>% 
   na.omit()
 
+# Save the final dataset
 saveRDS(final, "./Xiru Lyu/Cleaning/final.rds")
