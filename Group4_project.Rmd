@@ -495,7 +495,7 @@ library(reticulate)
 # py_install("matplotlib")
 # py_install("pylab")
 use_virtualenv(virtualenv = "r-reticulate")
-# use_python("/Library/Frameworks/Python.framework/Versions/3.7/lib/python3.7")
+use_python("/Users/lihuayu/anaconda3/bin/python")
 ```
 
 Note for Python, we use pandas to merge and clean all datasets. Because there is no package to perform stepwise model selection, so we refer outsource codes from the internet for stepwise selection by AIC. Links for reference are attached to code chunks below.
