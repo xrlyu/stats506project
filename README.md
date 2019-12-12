@@ -1,18 +1,16 @@
-# Stats506project--group 4
+# STATS 506 Project -- Group 4
 
-## Question discussing
-
-The goal of this project is to explore factors that can affect the level of LDL in a human body, and the result is intended to help readers gain insights on how to balance the level of LDL in order to control/prevent cardiovascular diseases.
+The goal of this project is to explore factors that can affect the level of LDL in a human body, and the result is intended to help readers gain insights on how to balance the level of LDL in order to control/prevent cardiovascular diseases. It is shown that age, weight, height, BMI, systolic and diastolic blood pressures, and the level of triglyceride are all factors that can explain the variation in the level of LDl. 
 
 ## Outline
 
-Here is our outline of this project:
+Here is our outline for this project:
 
-(1) Data cleaning: including the process of choosing proper variables, merging datasets, reshaping the datasets, and deleting missing values.
+(1) Data cleaning: choosing proper variables, merging datasets, reshaping the datasets, and deleting missing values
 
-(2) Model construction: building up the model using linear regression, proper variables transformation (modifying the response `ldl` as `\sqrt{ldl}` and adding square items), and model selection upon the linear models.
+(2) Core analysis: building up multiple linear regression models, and then performing variable transformation and model selection techniques
 
-(3) Additional analysis: producing some additional plots, using quantile regression upon `ldl` and another variable.
+(3) Additional analysis: creating additional plots for model interpretations and using quantile regressions for inference
 
 ## Group member & their technique tools
 
@@ -32,19 +30,21 @@ Here is our outline of this project:
 
 ### Xiru Lyu
 
-`Cleaning.do`, `Model.do`: Coding files of Stata.
+`Cleaning.do`, `Model.do`: Coding files of Stata
 
-`*.dta`: Some data files during the process of running `Cleaning.do`.
+`*.dta`: Some data files during the process of running `Cleaning.do`
 
-`Results/*.png`: Some plotting results running `*.do` for knitting Rmarkdown.
+`Results/*.png`: Some plotting results running `*.do` for knitting Rmarkdown
+
+`Cleaning.R`, `Quantile.R`: Files for creating the quantile regression plot
 
 ### Kai Liu
 
-`*.ipynb`: Coding files of Python.
+`*.ipynb`: Coding files of Python
 
-`*.html`: Running results of Python.
+`*.html`: Running results of Python
 
-`failed picture in R markdown/*.png`: Some graphs for knitting Rmarkdown.
+`failed picture in R markdown/*.png`: Some graphs for knitting Rmarkdown
 
 ### Other files
 
