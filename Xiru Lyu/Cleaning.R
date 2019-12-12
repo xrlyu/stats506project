@@ -60,4 +60,4 @@ final <- inner_join(demo, bp, by = "seqn") %>%
   arrange(seqn) %>% 
   na.omit()
 
-saveRDS(final, "./Cleaning/final.rds")
+saveRDS(final, "./Xiru Lyu/Cleaning/final.rds")
