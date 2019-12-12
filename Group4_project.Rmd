@@ -1099,9 +1099,13 @@ ax.set_xlabel('AGE', fontsize=16)
 ax.set_ylabel('LDL(sqrt_LDL)', fontsize=16);
 ```
 
-
-
 # Discussion
+
+All of the three tools above use the model selection upon linear regression model, but some difference exist between these three tools.
+
+For the tool using `data.table` in R, the model selection function is just as `step(,direction='')`, and the direction choose is `both`; note that the selection criterion is by AIC. For the tool using Stata, the model selection command is using `stepwise`; the criterion is using the p-values (here the p-value standards are set at 0.05), and both the backward selection and forward selection are considered; by the way, the Stata tool also compare the AIC and BIC between the two nested models using model selection. For Python, the code for backward and forward selections are downloaded from the given github site, and the criteria choose is AIC. Because some difference upon model selection exists between the three tools, the final regression results may be different from each other.
+
+As for the additional analysis, the R tool chooses the linear mixed model, and draw some plots of the features of the regression models, as well as the relationship between `ldl` and `age` and `gender`. As for Stata and Python tools, they choose the quantile regression as the additional method; for Stata, the variables choose are `ldl` and `triglycerides`, and for Python, the variable choose is `age`.
 
 # Results
 
