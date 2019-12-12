@@ -536,7 +536,9 @@ import statsmodels.formula.api as smf
 import matplotlib.pyplot as plt
 import pylab
 import statsmodels.api as sm
+```
 
+```{python}
 ## code from github, link  https://github.com/talhahascelik/python_stepwiseSelection/blob/master/stepwiseSelection.py
 
 #Copyright 2019 Sinan Talha Hascelik
@@ -878,11 +880,21 @@ plt.title('Residuals against Y-fited')
 plt.ylabel('Residuals')
 plt.xlabel('Y-fitted value')
 plt.show()
+```
 
+```{python}
 res = lm1.resid  # residuals
 stats.probplot(res, dist="norm", plot=pylab) # QQplot, simliar to fig = sm.qqplot(res)
 pylab.show()
 ```
+
+```{r fig.width=6, fig.height=6,echo=FALSE, fig.align="left", fig.cap="Probability Plot"}
+library(png)
+library(grid)
+img <- readPNG("./kaliu python/failed picture in R markdwon/38.png")
+ grid.raster(img)
+```
+
 
 First, we plot y_fit versus residual, then we plot QQplot of residual, and we can see that the QQplot shows that the residual is not really normal.
 
@@ -908,7 +920,9 @@ x3=Data.drop(['LDL'],axis=1)
 final_vars,_=forwardSelection(x3,y3,model_type='linear',elimination_criteria='aic')
 
 final_vars,_=backwardSelection(x3,y3,model_type='linear',elimination_criteria='aic')
+```
 
+```{python include=FALSE}
 x4=Data[['LBXTR', 'BPXDI', 'AGE', 'HEIGHT', 'WEIGHT']]
 x4=sm.add_constant(x4)
 lm2=sm.OLS(y3.astype(float),x4.astype(float)).fit()
@@ -917,6 +931,41 @@ for i in range(5):
     sm.graphics.plot_ccpr(lm2,name) # https://en.wikipedia.org/wiki/Partial_residual_plot  
     #The CCPR (component and component-plus-residual) plot is a refinement of the partial residual plot
 plt.show()
+```
+
+```{r fig.width=5.5, fig.height=5.5,echo=FALSE, fig.align="left"}
+library(png)
+library(grid)
+img <- readPNG("./kaliu python/failed picture in R markdwon/43-1.png")
+ grid.raster(img)
+```
+
+```{r fig.width=5.5, fig.height=5.5,echo=FALSE, fig.align="left"}
+library(png)
+library(grid)
+img <- readPNG("./kaliu python/failed picture in R markdwon/43-2.png")
+ grid.raster(img)
+```
+
+```{r fig.width=5.5, fig.height=5.5,echo=FALSE, fig.align="left"}
+library(png)
+library(grid)
+img <- readPNG("./kaliu python/failed picture in R markdwon/43-3.png")
+ grid.raster(img)
+```
+
+```{r fig.width=5.5, fig.height=5.5,echo=FALSE, fig.align="left"}
+library(png)
+library(grid)
+img <- readPNG("./kaliu python/failed picture in R markdwon/43-4.png")
+ grid.raster(img)
+```
+
+```{r fig.width=5.5, fig.height=5.5,echo=FALSE, fig.align="left"}
+library(png)
+library(grid)
+img <- readPNG("./kaliu python/failed picture in R markdwon/43-5.png")
+ grid.raster(img)
 ```
 
 From the graphes above, we can see that LBXTR and AGE plots, there are a little inverse 'U' shape, so in the final model, we add LBXTR square and AGE square terms.
@@ -1097,6 +1146,13 @@ ax.set_ylim((3.0, 17.5))
 legend = ax.legend()
 ax.set_xlabel('AGE', fontsize=16)
 ax.set_ylabel('LDL(sqrt_LDL)', fontsize=16);
+```
+
+```{r fig.width=5.5, fig.height=5.5,echo=FALSE, fig.align="left", fig.cap="Quantile reg: sqrt(ldl)~age"}
+library(png)
+library(grid)
+img <- readPNG("./kaliu python/failed picture in R markdwon/49.png")
+ grid.raster(img)
 ```
 
 # Discussion
