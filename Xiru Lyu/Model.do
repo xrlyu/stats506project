@@ -1,3 +1,13 @@
+// STATS 506, FALL 2019
+// 
+// Model.do
+// 
+// This file contains codes for the core and the additional analysis.
+//
+// Author: Xiru Lyu, xlyu@umich.edu
+//
+// Last Updated: Dec 11, 2019
+
 * import the data
 use "./Xiru Lyu/Data/final.dta", clear
 
