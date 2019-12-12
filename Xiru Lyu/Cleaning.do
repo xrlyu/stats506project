@@ -1,3 +1,14 @@
+// STATS 506, FALL 2019
+//
+// Cleaning.do
+//
+// This file contains codes for cleaning datasets.
+//
+// Author: Xiru Lyu, xlyu@umich.edu
+//
+// Last Updated: Dec 11, 2019
+
+
 * import demographic data
 import sasxport "./Original Data/DEMO_I.XPT.txt", clear
 
